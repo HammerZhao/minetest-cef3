@@ -64,6 +64,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "sound.h"
 
+#include "mt_cef.h"
+
 #if USE_SOUND
 	#include "sound_openal.h"
 #endif
@@ -2044,6 +2046,10 @@ void Game::run()
 		infotext = L"";
 		hud->resizeHotbar();
 
+#ifndef SERVER
+		MinetestBrowser::Update();
+#endif
+
 		updateProfilers(runData, stats, draw_times, dtime);
 		processUserInput(&flags, &runData, dtime);
 		// Update camera before player movement to avoid camera lag of one frame
@@ -3315,9 +3321,13 @@ void Game::toggleFullViewRange(float *statustext_time)
 		L"Disabled full viewing range",
 		L"Enabled full viewing range"
 	};
+	static const char *infostreammsg[] = {
+		"Disabled full viewing range",
+		"Enabled full viewing range"
+	};
 
 	draw_control->range_all = !draw_control->range_all;
-	infostream << msg[draw_control->range_all] << std::endl;
+	infostream << infostreammsg[draw_control->range_all] << std::endl;
 	statustext = msg[draw_control->range_all];
 	*statustext_time = 0;
 }

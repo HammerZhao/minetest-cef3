@@ -6,7 +6,7 @@ INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
 
 # Add custom SemiDebug build mode
-set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall -Wabi" CACHE STRING
+set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall -Wabi -std=c++11" CACHE STRING
 	"Flags used by the C++ compiler during semidebug builds."
 	FORCE
 )
@@ -270,6 +270,26 @@ if(ENABLE_SPATIAL)
 	endif(SPATIAL_LIBRARY AND SPATIAL_INCLUDE_DIR)
 endif(ENABLE_SPATIAL)
 
+find_library(CEF3_SHARED_LIBRARY NAMES cef PATHS ${CEF3_PREFIX}/Release NO_DEFAULT_PATH)
+find_library(CEF3_WRAPPER_LIBRARY NAMES cef_dll_wrapper PATHS ${CEF3_PREFIX}/libcef_dll_wrapper NO_DEFAULT_PATH)
+
+if (CEF3_SHARED_LIBRARY)
+	message(STATUS "CEF library found: ${CEF3_SHARED_LIBRARY}")
+else()
+	message(FATAL_ERROR "CEF library not found in ${CEF3_PREFIX}")
+endif()
+
+if (CEF3_WRAPPER_LIBRARY)
+	message(STATUS "CEF wrapper library found: ${CEF3_WRAPPER_LIBRARY}")
+else()
+	message(FATAL_ERROR "CEF wrapper library not found in ${CEF3_PREFIX}")
+endif()
+
+add_library(CEF3_SHARED_LIBRARY SHARED IMPORTED)
+add_library(CEF3_WRAPPER_LIBRARY STATIC IMPORTED)
+
+set(CEF3_INCLUDE_DIR "${CEF3_PREFIX}")
+message(STATUS "Added CEF includes in ${CEF3_PREFIX}")
 
 if(NOT MSVC)
 	set(USE_GPROF FALSE CACHE BOOL "Use -pg flag for g++")
@@ -540,6 +560,7 @@ set(client_SRCS
 	shader.cpp
 	sky.cpp
 	wieldmesh.cpp
+	mt_cef.cpp
 	${client_SCRIPT_SRCS}
 	${UNITTEST_CLIENT_SRCS}
 )
@@ -567,6 +588,7 @@ include_directories(
 	${JSON_INCLUDE_DIR}
 	${X11_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
+	${CEF3_INCLUDE_DIR}
 )
 
 
@@ -648,6 +670,8 @@ if(BUILD_CLIENT)
 	if (USE_SPATIAL)
 		target_link_libraries(${PROJECT_NAME} ${SPATIAL_LIBRARY})
 	endif()
+	target_link_libraries(${PROJECT_NAME} ${CEF3_SHARED_LIBRARY} ${CEF3_WRAPPER_LIBRARY})
+#	target_link_libraries(${PROJECT_NAME} ${CEF3_WRAPPER_LIBRARY})
 endif(BUILD_CLIENT)
 
 
@@ -687,6 +711,8 @@ if(BUILD_SERVER)
 			${CURL_LIBRARY}
 		)
 	endif()
+	target_link_libraries(${PROJECT_NAME} ${CEF3_SHARED_LIBRARY})
+	target_link_libraries(${PROJECT_NAME} ${CEF3_WRAPPER_LIBRARY})
 endif(BUILD_SERVER)
 
 # Blacklisted locales that don't work.
@@ -760,14 +786,14 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
 	endif()
 
-	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
+	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -std=c++11 -pipe -funroll-loops")
 	if(APPLE)
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
 	else()
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 	endif(APPLE)
-	set(CMAKE_CXX_FLAGS_SEMIDEBUG "-g -O1 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "-g -O1 -Wall -Wabi -std=c++11 ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wabi -std=c++11 ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")

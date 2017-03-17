@@ -53,6 +53,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlicht_changes/static_text.h"
 #include "guiscalingfilter.h"
 
+#include "mt_cef.h"
+
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
 #include "intlGUIEditBox.h"
 #endif
@@ -1707,6 +1709,47 @@ bool GUIFormSpecMenu::parseSizeDirect(parserData* data, std::string element)
 	return true;
 }
 
+void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
+{
+	std::vector<std::string> parts = split(element,';');
+
+	if (((parts.size() == 2) || (parts.size() == 3)) ||
+		((parts.size() > 3) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	{
+		std::vector<std::string> v_pos = split(parts[0],',');
+		std::vector<std::string> v_geom = split(parts[1],',');
+		std::string url = parts[2];
+
+		MY_CHECKPOS("browser",0);
+		MY_CHECKGEOM("browser",1);
+
+		v2s32 pos = padding + AbsoluteRect.UpperLeftCorner + pos_offset * spacing;
+		pos.X += stof(v_pos[0]) * (float)spacing.X - ((float)spacing.X - (float)imgsize.X)/2;
+		pos.Y += stof(v_pos[1]) * (float)spacing.Y - ((float)spacing.Y - (float)imgsize.Y)/2;
+
+		v2s32 geom;
+		geom.X = stof(v_geom[0]) * (float)spacing.X;
+		geom.Y = stof(v_geom[1]) * (float)spacing.Y;
+
+		dstream << "Pos:  " << pos.X << "," << pos.Y << std::endl;
+		dstream << "Geom: " << geom.X << "," << geom.Y << std::endl;
+
+		video::ITexture *browsertexture =
+			Environment->getVideoDriver()->addTexture(core::dimension2d<u32>(geom.X, geom.Y),
+													  io::path("browsertexture"),
+													  irr::video::ECF_A8R8G8B8);
+
+		gui::IGUIImage* browserimage = Environment->addImage(browsertexture, core::position2d<s32>(pos.X, pos.Y));
+		
+		dstream<<"URL is "<< url <<std::endl;
+
+		WebPage* webPage = MinetestBrowser::GetInstance()->CreateWebPage(Environment->getVideoDriver(), browsertexture, geom.X, geom.Y, url);
+
+		return;
+	}
+	errorstream<< "Invalid browser element(" << parts.size() << "): '" << element << "'"  << std::endl;
+}
+
 void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 {
 	//some prechecks
@@ -1864,6 +1907,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 
 	if (type == "scrollbar") {
 		parseScrollBar(data, description);
+		return;
+	}
+
+	if (type == "browser") {
+		parseBrowser(data, description);
 		return;
 	}
 

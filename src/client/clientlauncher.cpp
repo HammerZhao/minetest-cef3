@@ -36,6 +36,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "clientlauncher.h"
 #include "version.h"
 
+#include "mt_cef.h"
+
+
 /* mainmenumanager.h
  */
 gui::IGUIEnvironment *guienv = NULL;
@@ -184,6 +187,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	bool retval = true;
 	bool *kill = porting::signal_handler_killstatus();
 
+	MinetestBrowser::Initialize();
+
 	while (device->run() && !*kill && !g_gamecallback->shutdown_requested)
 	{
 		// Set the window caption
@@ -294,6 +299,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			break;
 		}
 	} // Menu-game loop
+
+	MinetestBrowser::Shutdown();
 
 	g_menuclouds->drop();
 	g_menucloudsmgr->drop();

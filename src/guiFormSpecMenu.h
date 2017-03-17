@@ -507,6 +507,7 @@ private:
 	bool parseVersionDirect(std::string data);
 	bool parseSizeDirect(parserData* data, std::string element);
 	void parseScrollBar(parserData* data, std::string element);
+	void parseBrowser(parserData* data, std::string element);
 
 	void tryClose();
 
