@@ -9,7 +9,7 @@ minetest.register_node("browser:browser", {
 		"bones_front.png"
 	},
 	on_punch = function(pos, node, player)
-		local fspec = "size[10,10] browser[1,1;8,8;https://www.youtube.com/embed/diubaOKUzLs?autoplay=1]"
+		local fspec = "size[14,10] browser[1,1;12,8;https://www.youtube.com/embed/C-idtmkukBk?autoplay=1]"
 		minetest.show_formspec(player:get_player_name(), "browser:open", fspec)
 	end
 
