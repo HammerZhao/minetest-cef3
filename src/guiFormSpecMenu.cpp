@@ -148,6 +148,7 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 
 void GUIFormSpecMenu::removeChildren()
 {
+	MinetestBrowser::GetInstance()->CloseWebPage("formspec");
 	const core::list<gui::IGUIElement*> &children = getChildren();
 
 	while(!children.empty()) {
@@ -1734,16 +1735,11 @@ void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
 		dstream << "Pos:  " << pos.X << "," << pos.Y << std::endl;
 		dstream << "Geom: " << geom.X << "," << geom.Y << std::endl;
 
-		video::ITexture *browsertexture =
-			Environment->getVideoDriver()->addTexture(core::dimension2d<u32>(geom.X, geom.Y),
-													  io::path("browsertexture"),
-													  irr::video::ECF_A8R8G8B8);
-
-		gui::IGUIImage* browserimage = Environment->addImage(browsertexture, core::position2d<s32>(pos.X, pos.Y));
-		
 		dstream<<"URL is "<< url <<std::endl;
 
-		WebPage* webPage = MinetestBrowser::GetInstance()->CreateWebPage(Environment->getVideoDriver(), browsertexture, geom.X, geom.Y, url);
+		WebPage* webPage = MinetestBrowser::GetInstance()->CreateWebPage(
+			"formspec", Environment->getVideoDriver(), Environment, pos, geom, url
+		);
 
 		return;
 	}

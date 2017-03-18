@@ -1,3 +1,5 @@
+#include <unordered_map>
+
 #include "include/cef_app.h"
 #include "include/cef_client.h"
 #include "include/cef_render_handler.h"
@@ -43,11 +45,15 @@ public:
 class WebPage
 {
 private:
+	std::string m_name;
     video::IVideoDriver *m_driver;
+    gui::IGUIImage* m_guiImage;
     video::ITexture *m_texture;
 	CefRefPtr<MinetestCefClient> m_client;
+	CefRefPtr<CefBrowser> m_cefbrowser;
 public:
-	WebPage(video::IVideoDriver *driver, video::ITexture *texture);
+	WebPage(std::string name, video::IVideoDriver *driver,
+			irr::gui::IGUIImage *image, video::ITexture *texture);
 	~WebPage();
 	void Open(std::string url);
 	void Close();
@@ -56,13 +62,23 @@ public:
 
 class MinetestBrowser
 {
+private:
+	std::unordered_map<std::string, WebPage*> m_webPages;
 public:
 	MinetestBrowser();
 	~MinetestBrowser();
 	static MinetestBrowser* GetInstance();
+	static bool IsInitialized();
 	static void Initialize();
 	static void Shutdown();
 	static void Update();
-	WebPage* CreateWebPage(video::IVideoDriver *driver, video::ITexture *texture, int width, int height);
-	WebPage* CreateWebPage(video::IVideoDriver *driver, video::ITexture *texture, int width, int height, std::string url);
+	WebPage* CreateWebPage(std::string name, video::IVideoDriver *driver,
+						   video::ITexture *texture, v2s32 pos, v2s32 geom);
+	WebPage* CreateWebPage(std::string name, video::IVideoDriver *driver,
+						   video::ITexture *texture, v2s32 pos, v2s32 geom, std::string url);
+	WebPage* CreateWebPage(std::string name, video::IVideoDriver *driver,
+						   irr::gui::IGUIEnvironment* guiEnv, v2s32 pos, v2s32 geom);
+	WebPage* CreateWebPage(std::string name, video::IVideoDriver *driver,
+						   irr::gui::IGUIEnvironment* guiEnv, v2s32 pos, v2s32 geom, std::string url);
+	void CloseWebPage(std::string name);
 };
