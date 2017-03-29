@@ -15,7 +15,7 @@ minetest.register_node("browser:browser1x1", {
 	},
 	on_use = function(pos, node, player)
 		local fspec = "size[14,10] browser[1,1;12,8;https://www.youtube.com/embed/C-idtmkukBk?autoplay=1]"
-		minetest.show_formspec(player:get_player_name(), "browser:open", fspec)
+		minetest.show_formspec("browser:open", fspec)
 	end
 
 --	on_use = function(pos, node, player)

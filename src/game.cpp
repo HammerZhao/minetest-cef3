@@ -3988,6 +3988,14 @@ void Game::handlePointingAtNode(GameRunData *runData,
 		handleDigging(runData, pointed, nodepos, playeritem_toolcap, dtime);
 	}
 
+	if (!isLeftPressed() && getLeftClicked()) {
+		MapNode n = map.getNodeNoEx(nodepos);
+        if (nodedef_manager->get(n).is_interactive) {
+            infotext = L"Interactive node punched!";
+		}
+
+	}
+
 	if ((getRightClicked() ||
 			runData->repeat_rightclick_timer >= m_repeat_right_click_time) &&
 			client->checkPrivilege("interact")) {
