@@ -2046,10 +2046,6 @@ void Game::run()
 		infotext = L"";
 		hud->resizeHotbar();
 
-#ifndef SERVER
-		MinetestBrowser::Update();
-#endif
-
 		updateProfilers(runData, stats, draw_times, dtime);
 		processUserInput(&flags, &runData, dtime);
 		// Update camera before player movement to avoid camera lag of one frame
@@ -2067,6 +2063,11 @@ void Game::run()
 		processPlayerInteraction(&runData, dtime, flags.show_hud,
 				flags.show_debug);
 		updateFrame(&graph, &stats, &runData, dtime, flags, cam_view);
+
+#ifndef SERVER
+        MinetestBrowser::Update();
+#endif
+
 		updateProfilerGraphs(&graph);
 
 		// Update if minimap has been disabled by the server

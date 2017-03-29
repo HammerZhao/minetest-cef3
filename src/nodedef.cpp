@@ -291,6 +291,7 @@ void ContentFeatures::reset()
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;
+    is_interactive = false;
 
 #endif
 	has_on_construct = false;
@@ -678,6 +679,9 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	case NDT_RAILLIKE:
 	case NDT_NODEBOX:
 		solidness = 0;
+		break;
+	case NDT_INTERACTIVE:
+		is_interactive = 0;
 		break;
 	}
 
