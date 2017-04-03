@@ -681,7 +681,8 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		solidness = 0;
 		break;
 	case NDT_INTERACTIVE:
-		is_interactive = 0;
+		solidness = 2;
+		is_interactive = true;
 		break;
 	}
 

@@ -1732,12 +1732,7 @@ void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
 		geom.X = stof(v_geom[0]) * (float)spacing.X;
 		geom.Y = stof(v_geom[1]) * (float)spacing.Y;
 
-		dstream << "Pos:  " << pos.X << "," << pos.Y << std::endl;
-		dstream << "Geom: " << geom.X << "," << geom.Y << std::endl;
-
-		dstream<<"URL is "<< url <<std::endl;
-
-		WebPage* webPage = MinetestBrowser::GetInstance()->CreateWebPage(
+		/*WebPage* webPage =*/ MinetestBrowser::GetInstance()->CreateWebPage(
 			"formspec", Environment->getVideoDriver(), Environment, pos, geom, url
 		);
 
@@ -2971,6 +2966,17 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 				return true;
 			}
 		}
+
+        // Unfortunately at this point the mouse x and y seem to be wrong, so
+        // unfortunately we need to test whether the formspec browser exists
+        // or not .......
+        WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+        if (webPage != NULL) {
+            if (event.KeyInput.PressedDown) {
+                webPage->OnKeyPressed(event.KeyInput);
+            }
+            return true;
+        }
 	}
 	// Mouse wheel events: send to hovered element instead of focused
 	if(event.EventType==EET_MOUSE_INPUT_EVENT
@@ -2980,6 +2986,13 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(
 				core::position2d<s32>(x, y));
+
+        if (strcmp(hovered->getName(), "browser") == 0) {
+            WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+            webPage->OnMouseWheel(x, y, event.MouseInput.Wheel);
+            return true;
+        }
+
 		if (hovered && isMyChild(hovered)) {
 			hovered->OnEvent(event);
 			return true;
@@ -2992,6 +3005,35 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(
 				core::position2d<s32>(x, y));
+
+        // If a browser was created via formspec, then it will have been named
+        // "browser". This is a hack currently as I can't use numeric IDs and
+        // testing of the WebPage instance named "formspec" exists is also not
+        // very nice ...
+        if (strcmp(hovered->getName(), "browser") == 0) {
+            WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+            // TODO: If webPage is NULL, do error handling!
+            switch (event.MouseInput.Event) {
+                case EMIE_MOUSE_MOVED:
+                    webPage->OnMouseMoved(x, y);
+                    return true;
+                case EMIE_LMOUSE_PRESSED_DOWN:
+                    webPage->OnLeftMousePressedDown(x, y);
+                    return true;
+                case EMIE_LMOUSE_LEFT_UP:
+                    webPage->OnLeftMouseLeftUp(x, y);
+                    return true;
+                case EMIE_LMOUSE_DOUBLE_CLICK:
+                    webPage->OnLeftMouseDoubleClick(x, y);
+                    return true;
+                default:
+                    // The click took place on the browser, so no need to
+                    // let the system search for other potential candidates
+                    // to handle the event
+                    return true;
+            }
+        }
+
 		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			m_old_tooltip_id = -1;
 			m_old_tooltip = L"";

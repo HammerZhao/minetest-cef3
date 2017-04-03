@@ -73,6 +73,13 @@ public:
 	void Open(std::string url);
 	void Close();
 	void SetSize(int width, int height);
+
+	void OnMouseMoved(s32 x, s32 y);
+	void OnLeftMousePressedDown(s32 x, s32 y);
+	void OnLeftMouseLeftUp(s32 x, s32 y);
+	void OnLeftMouseDoubleClick(s32 x, s32 y);
+    void OnMouseWheel(int x, int y, f32 delta);
+	void OnKeyPressed(SEvent::SKeyInput keyinput);
 };
 
 class MinetestBrowser
@@ -108,7 +115,8 @@ public:
 	WebPage* CreateWebPage(std::string name, video::IVideoDriver *driver,
 						   irr::gui::IGUIEnvironment* guiEnv, v2s32 pos, v2s32 geom, std::string url);
 
-	void CloseWebPage(std::string name);
+    WebPage* GetWebPage(std::string name);
+    void CloseWebPage(std::string name);
 };
 
 /* GARBAGE

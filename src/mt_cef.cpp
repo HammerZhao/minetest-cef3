@@ -56,6 +56,7 @@ void MinetestBrowser::Initialize()
 	settings.command_line_args_disabled = true;
 //	settings.windowless_frame_rate = 30;
 //	settings.log_severity = LOGSEVERITY_VERBOSE;
+	settings.log_severity = LOGSEVERITY_DISABLE;
 	CefString(&settings.log_file).FromASCII("cef.log");
 	CefString(&settings.browser_subprocess_path).FromASCII("./cefclient");
 
@@ -163,6 +164,7 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 		   irr::video::ECF_A8R8G8B8);
 
 	irr::gui::IGUIImage* image = guiEnv->addImage(texture, core::position2d<s32>(pos.X, pos.Y));
+	image->setName("browser");
 
 	WebPage* webPage = new WebPage(name, driver, image, texture, geom.X, geom.Y);
 	webPage->SetSize(geom.X, geom.Y);
@@ -180,6 +182,10 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 	webPage->Open(url);
 
 	return webPage;
+}
+
+WebPage* MinetestBrowser::GetWebPage(std::string name) {
+    return m_webPages[name];
 }
 
 void MinetestBrowser::CloseWebPage(std::string name)
@@ -271,6 +277,111 @@ void WebPage::SetSize(int width, int height)
 	m_height = height;
 }
 
+void WebPage::OnMouseMoved(s32 x, s32 y)
+{
+    m_cefbrowser->GetHost()->SetFocus(true);
+    CefMouseEvent e;
+    // We need to scale and offset the x, y that is to be sent to the browser!
+    e.x = x - m_guiImage->getAbsolutePosition().UpperLeftCorner.X;
+    e.y = y - m_guiImage->getAbsolutePosition().UpperLeftCorner.Y;
+    m_cefbrowser->GetHost()->SendMouseMoveEvent(e, false);
+}
+
+void WebPage::OnLeftMousePressedDown(s32 x, s32 y)
+{
+    m_cefbrowser->GetHost()->SetFocus(true);
+    CefMouseEvent e;
+    // We need to scale and offset the x, y that is to be sent to the browser!
+    e.x = x - m_guiImage->getAbsolutePosition().UpperLeftCorner.X;
+    e.y = y - m_guiImage->getAbsolutePosition().UpperLeftCorner.Y;
+    m_cefbrowser->GetHost()->SendMouseClickEvent(e, MBT_LEFT, false, 1);
+}
+
+void WebPage::OnLeftMouseLeftUp(s32 x, s32 y)
+{
+    m_cefbrowser->GetHost()->SetFocus(true);
+    CefMouseEvent e;
+    // We need to scale and offset the x, y that is to be sent to the browser!
+    e.x = x - m_guiImage->getAbsolutePosition().UpperLeftCorner.X;
+    e.y = y - m_guiImage->getAbsolutePosition().UpperLeftCorner.Y;
+    m_cefbrowser->GetHost()->SendMouseClickEvent(e, MBT_LEFT, true, 1);
+}
+
+void WebPage::OnLeftMouseDoubleClick(s32 x, s32 y)
+{
+    m_cefbrowser->GetHost()->SetFocus(true);
+    CefMouseEvent e;
+    // We need to scale and offset the x, y that is to be sent to the browser!
+    e.x = x - m_guiImage->getAbsolutePosition().UpperLeftCorner.X;
+    e.y = y - m_guiImage->getAbsolutePosition().UpperLeftCorner.Y;
+    m_cefbrowser->GetHost()->SendMouseClickEvent(e, MBT_LEFT, false, 2);
+    m_cefbrowser->GetHost()->SendMouseClickEvent(e, MBT_LEFT, true, 2);
+}
+
+void WebPage::OnMouseWheel(s32 x, s32 y, f32 delta)
+{
+    m_cefbrowser->GetHost()->SetFocus(true);
+    CefMouseEvent e;
+    e.x = x - m_guiImage->getAbsolutePosition().UpperLeftCorner.X;
+    e.y = y - m_guiImage->getAbsolutePosition().UpperLeftCorner.Y;
+
+    m_cefbrowser->GetHost()->SendMouseWheelEvent(e, 0, delta * 50);
+}
+
+void WebPage::OnKeyPressed(SEvent::SKeyInput keyinput)
+{
+    m_cefbrowser->GetHost()->SetFocus(true);
+    CefKeyEvent e;
+
+    wchar_t key = keyinput.Char;
+    EKEY_CODE keycode = keyinput.Key;
+
+    if (key == 0 && keycode == 0) {
+    } else if ((key < 32 || key > 126) && key != 13) { //65 (upper A) 97 (lower a) - 90 (upper Z) 122 (lower z)
+        e.windows_key_code = keycode;
+        // e.native_key_code = keycode;
+        e.type = KEYEVENT_RAWKEYDOWN;
+        m_cefbrowser->GetHost()->SendKeyEvent(e);
+        e.type = KEYEVENT_KEYUP;
+        m_cefbrowser->GetHost()->SendKeyEvent(e);
+/*    } else if () { // Modifiers
+        switch (key) {
+            case 160:
+                e.modifiers |= 1 << 1; // Shift
+            case 161:
+                e.modifiers |= 1 << 1;
+            case 162:
+                e.modifiers |= 1 << 2; // Control
+            case 163:
+                e.modifiers |= 1 << 2;
+            case 164:
+                e.modifiers |= 1 << 3; // Alt
+            case 165:
+                e.modifiers |= 1 << 3;
+            default:
+            e.type = KEYEVENT_RAWKEYDOWN;
+            m_cefbrowser->GetHost()->SendKeyEvent(e);
+        }*/
+    } else if (key >= 160 && key <= 165) {
+    } else {
+        e.windows_key_code = key;
+        e.character = key;
+        e.type = KEYEVENT_CHAR;
+
+        // The next segment may need to be changed to a variable
+        // in the class, but not sure if this is needed for the
+        // browser or not. To be investigated
+        if (keyinput.Shift) {
+            e.modifiers |= 1 << 1; // Shift
+        }
+        if (keyinput.Control) {
+            e.modifiers |= 1 << 2; // Control
+        }
+
+        m_cefbrowser->GetHost()->SendKeyEvent(e);
+    }
+}
+
 MinetestCefRenderHandler::MinetestCefRenderHandler(video::IVideoDriver *driver,
         video::ITexture *texture, int width, int height)
 	: m_driver(driver)
@@ -297,21 +408,6 @@ bool MinetestCefRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRec
 {
     rect = CefRect(0, 0, m_width, m_height);
     return true;
-/*	if (m_texture != NULL)
-	{
-		m_texture->lock();
-		rect = CefRect(0, 0, m_texture->getSize().Width, m_texture->getSize().Height);
-		m_texture->unlock();
-		return true;
-	}
-	else if (m_image != NULL)
-	{
-		m_image->lock();
-		rect = CefRect(0, 0, m_image->getDimension().Width, m_image->getDimension().Height);
-		m_image->unlock();
-		return true;
-	}
-	return false;*/
 }
 
 void MinetestCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height)
@@ -339,79 +435,3 @@ CefRefPtr<CefRenderHandler> MinetestCefClient::GetRenderHandler()
 {
 	return m_renderHandler;
 }
-
-/* GARBAGE
-MinetestITextureCefRenderHandler::MinetestITextureCefRenderHandler(video::IVideoDriver *driver, video::ITexture *texture)
-	: m_driver(driver)
-	, m_texture(texture)
-{;}
-
-bool MinetestITextureCefRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect)
-{
-	if (m_texture != NULL)
-	{
-		m_texture->lock();
-		rect = CefRect(0, 0, m_texture->getSize().Width, m_texture->getSize().Height);
-		m_texture->unlock();
-		return true;
-	}
-	return false;
-}
-
-void MinetestITextureCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height)
-{
-	// Danger, Will Robinson!
-	if (m_texture != NULL)
-	{
-		irr::u8* data = (irr::u8*) m_texture->lock();
-		memcpy(data, buffer, width*height*4);
-		m_texture->unlock();
-	}
-}
-
-MinetestITextureCefClient::MinetestITextureCefClient(MinetestITextureCefRenderHandler *renderHandler)
-	: m_renderHandler(renderHandler)
-{;}
-
-CefRefPtr<CefRenderHandler> MinetestITextureCefClient::GetRenderHandler()
-{
-	return m_renderHandler;
-}
-
-MinetestIImageCefRenderHandler::MinetestIImageCefRenderHandler(video::IVideoDriver *driver, video::IImage *image)
-	: m_driver(driver)
-	, m_image(image)
-{;}
-
-bool MinetestIImageCefRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect)
-{
-	if (m_image != NULL)
-	{
-		m_image->lock();
-		rect = CefRect(0, 0, m_image->getDimension().Width, m_image->getDimension().Height);
-		m_image->unlock();
-		return true;
-	}
-	return false;
-}
-
-void MinetestIImageCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height)
-{
-	// Danger, Will Robinson!
-	if (m_image != NULL)
-	{
-		irr::u8* data = (irr::u8*) m_image->lock();
-		memcpy(data, buffer, width*height*4);
-		m_image->unlock();
-	}
-}
-
-MinetestIImageCefClient::MinetestIImageCefClient(MinetestIImageCefRenderHandler *renderHandler)
-	: m_renderHandler(renderHandler)
-{;}
-
-CefRefPtr<CefRenderHandler> MinetestIImageCefClient::GetRenderHandler()
-{
-	return m_renderHandler;
-}
-*/
