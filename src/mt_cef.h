@@ -117,6 +117,7 @@ public:
 
     WebPage* GetWebPage(std::string name);
     void CloseWebPage(std::string name);
+	void CloseWebPages();
 };
 
 /* GARBAGE

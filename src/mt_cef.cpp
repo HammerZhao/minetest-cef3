@@ -68,6 +68,7 @@ void MinetestBrowser::Initialize()
 // static
 void MinetestBrowser::Shutdown()
 {
+	GetInstance()->CloseWebPages();
 	CefShutdown();
 }
 
@@ -198,6 +199,13 @@ void MinetestBrowser::CloseWebPage(std::string name)
 	webPage->Close();
 	m_webPages.erase(name);
 	delete webPage;
+}
+
+void MinetestBrowser::CloseWebPages() {
+	for(auto iter = m_webPages.begin(); iter != m_webPages.end(); ++iter){
+		auto cur = iter->first; // pointer to Node
+		m_webPages[cur]->Close();
+	}
 }
 
 /* WebPage */
