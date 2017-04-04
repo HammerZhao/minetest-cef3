@@ -193,12 +193,16 @@ void MinetestBrowser::CloseWebPage(std::string name)
 {
 	CHECK(m_browser);
 
-	WebPage* webPage = m_webPages[name];
-	if (webPage == NULL) return;
+	auto iter = m_webPages.find(name);
+	if (iter != m_webPages.end()) {
+		WebPage* webPage = iter->second;
+		m_webPages.erase(iter);
 
-	webPage->Close();
-	m_webPages.erase(name);
-	delete webPage;
+		if (webPage == NULL) return;
+
+		webPage->Close();
+		delete webPage;
+	}
 }
 
 void MinetestBrowser::CloseWebPages() {
