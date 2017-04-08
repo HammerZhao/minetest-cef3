@@ -1,3 +1,5 @@
+#include <malloc.h>
+
 #include "include/cef_app.h"
 #include "include/cef_client.h"
 #include "include/cef_render_handler.h"
@@ -78,8 +80,10 @@ void MinetestBrowser::Update()
 	CHECK(m_browser);
     if (skippy >= 1)
     {
-        CefDoMessageLoopWork();
-        skippy = 0;
+    	if (GetInstance()->m_webPages.begin() != GetInstance()->m_webPages.end()) {
+			CefDoMessageLoopWork();
+    	}
+		skippy = 0;
     }
     skippy++;
 }
@@ -424,19 +428,62 @@ bool MinetestCefRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRec
 
 void MinetestCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height)
 {
-	// Danger, Will Robinson!
+/*
+ * x = 1 y = 1, w = 4, h =
+ * Width
+ * 00000000
+ * 01111100
+ * 01111100
+ * 00000000
+ *
+ * Skip y * width
+ * Repeat for height number of times
+ *   Copy offset x to offset x + width
+ *   Skip width -
+ */
+	if (dirtyRects.empty()) return;
+
+	if (width <= 2 && height <= 2) {
+		// Ignore really small buffer sizes while the widget is starting up.
+		return;
+	}
+
+	std::vector<int>::size_type sz = dirtyRects.size();
+
 	if (m_texture != NULL)
 	{
 		irr::u8* data = (irr::u8*) m_texture->lock();
-		memcpy(data, buffer, width*height*4);
+		for (unsigned i = 0; i < sz; i++) {
+			CefRect rect = dirtyRects[i];
+			if (rect.x == 0 && rect.y == 0 && width == rect.width && height == rect.height) {
+				memcpy(data, buffer, width * height * 4);
+			} else {
+				unsigned yoffset = rect.y * width * 4;
+				unsigned xoffset = rect.x * 4;
+				unsigned skip = (width - rect.width) * 4;
+				unsigned curpos = yoffset + xoffset;
+				for (int j = 0; j < rect.height; j++) {
+					// Danger, Will Robinson!
+					memcpy(data + curpos, buffer + curpos, rect.width * 4);
+					curpos = curpos + (rect.width * 4) + skip;
+				}
+			}
+		}
+		m_texture->unlock();
+	}
+
+/*	if (m_texture != NULL)
+	{
+		irr::u8* data = (irr::u8*) m_texture->lock();
+		memcpy(data, buffer, width * height * 4);
 		m_texture->unlock();
 	}
 	else if (m_image != NULL)
 	{
 		irr::u8* data = (irr::u8*) m_image->lock();
-		memcpy(data, buffer, width*height*4);
+		memcpy(data, buffer, width * height * 4);
 		m_image->unlock();
-	}
+	}*/
 }
 
 MinetestCefClient::MinetestCefClient(MinetestCefRenderHandler *renderHandler)
