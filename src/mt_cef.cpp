@@ -464,7 +464,7 @@ void MinetestCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintEleme
 				unsigned curpos = yoffset + xoffset;
 				for (int j = 0; j < rect.height; j++) {
 					// Danger, Will Robinson!
-					memcpy(data + curpos, buffer + curpos, rect.width * 4);
+					memcpy(((uint8_t*)data) + curpos, ((uint8_t*)buffer) + curpos, rect.width * 4);
 					curpos = curpos + (rect.width * 4) + skip;
 				}
 			}
