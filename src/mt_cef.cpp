@@ -458,6 +458,9 @@ void MinetestCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintEleme
 			if (rect.x == 0 && rect.y == 0 && width == rect.width && height == rect.height) {
 				memcpy(data, buffer, width * height * 4);
 			} else {
+				// These calculations are critical. Do NOT make a mistake here or you WILL
+				// overwrite memory in use by other parts of the game, causing RANDOM
+				// crashes that seem totally UNRELATED to the below code
 				unsigned yoffset = rect.y * width * 4;
 				unsigned xoffset = rect.x * 4;
 				unsigned skip = (width - rect.width) * 4;
