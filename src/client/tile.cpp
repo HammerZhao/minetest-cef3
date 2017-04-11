@@ -37,7 +37,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiscalingfilter.h"
 #include "nodedef.h"
 
+#ifdef _ENABLE_CEF3
 #include "mt_cef.h"
+#endif // _ENABLE_CEF3
 
 #ifdef __ANDROID__
 #include <GLES/gl.h>
@@ -629,10 +631,12 @@ u32 TextureSource::generateTexture(const std::string &name)
         std::string browsername = sf.next(",");
         std::string url = sf.next("^");
 
+#ifdef _ENABLE_CEF3
         tex = driver->addTexture(dim, io::path(name.c_str()), irr::video::ECF_A8R8G8B8);
 
         MinetestBrowser::GetInstance()->CreateWebPage(name, driver,
             tex, dim, url);
+#endif // _ENABLE_CEF3
     }
     else
     {
@@ -1854,7 +1858,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			Create a web browser of specified Width and Height with
 			name (to register in the MinetestBrowser) and open the
 			give URL. This section is only there to verify that the
-			baseimg is not set and if it is generate an error
+			baseimg is not set, and if it is, generate an error
 		*/
 		else if (str_starts_with(part_of_name, "[browser:"))
 		{

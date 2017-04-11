@@ -53,7 +53,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlicht_changes/static_text.h"
 #include "guiscalingfilter.h"
 
+#ifdef _ENABLE_CEF3
 #include "mt_cef.h"
+#endif // _ENABLE_CEF3
 
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
 #include "intlGUIEditBox.h"
@@ -148,7 +150,9 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 
 void GUIFormSpecMenu::removeChildren()
 {
+#ifdef _ENABLE_CEF3
 	MinetestBrowser::GetInstance()->CloseWebPage("formspec");
+#endif
 	const core::list<gui::IGUIElement*> &children = getChildren();
 
 	while(!children.empty()) {
@@ -1732,10 +1736,11 @@ void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
 		geom.X = stof(v_geom[0]) * (float)spacing.X;
 		geom.Y = stof(v_geom[1]) * (float)spacing.Y;
 
-		/*WebPage* webPage =*/ MinetestBrowser::GetInstance()->CreateWebPage(
+#ifdef _ENABLE_CEF3
+		MinetestBrowser::GetInstance()->CreateWebPage(
 			"formspec", Environment->getVideoDriver(), Environment, pos, geom, url
 		);
-
+#endif // _ENABLE_CEF3
 		return;
 	}
 	errorstream<< "Invalid browser element(" << parts.size() << "): '" << element << "'"  << std::endl;
@@ -2967,6 +2972,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			}
 		}
 
+#ifdef _ENABLE_CEF3
         // Unfortunately at this point the mouse x and y seem to be wrong, so
         // unfortunately we need to test whether the formspec browser exists
         // or not .......
@@ -2977,6 +2983,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
             }
             return true;
         }
+#endif // _ENABLE_CEF3
 	}
 	// Mouse wheel events: send to hovered element instead of focused
 	if(event.EventType==EET_MOUSE_INPUT_EVENT
@@ -2987,11 +2994,13 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			Environment->getRootGUIElement()->getElementFromPoint(
 				core::position2d<s32>(x, y));
 
+#ifdef _ENABLE_CEF3
         if (strcmp(hovered->getName(), "browser") == 0) {
             WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
             webPage->OnMouseWheel(x, y, event.MouseInput.Wheel);
             return true;
         }
+#endif // _ENABLE_CEF3
 
 		if (hovered && isMyChild(hovered)) {
 			hovered->OnEvent(event);
@@ -3006,6 +3015,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			Environment->getRootGUIElement()->getElementFromPoint(
 				core::position2d<s32>(x, y));
 
+#ifdef _ENABLE_CEF3
         // If a browser was created via formspec, then it will have been named
         // "browser". This is a hack currently as I can't use numeric IDs and
         // testing of the WebPage instance named "formspec" exists is also not
@@ -3033,6 +3043,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
                     return true;
             }
         }
+#endif // _ENABLE_CEF3
 
 		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			m_old_tooltip_id = -1;

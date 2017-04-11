@@ -270,26 +270,31 @@ if(ENABLE_SPATIAL)
 	endif(SPATIAL_LIBRARY AND SPATIAL_INCLUDE_DIR)
 endif(ENABLE_SPATIAL)
 
-find_library(CEF3_SHARED_LIBRARY NAMES cef PATHS ${CEF3_PREFIX}/Release NO_DEFAULT_PATH)
-find_library(CEF3_WRAPPER_LIBRARY NAMES cef_dll_wrapper PATHS ${CEF3_PREFIX}/libcef_dll_wrapper NO_DEFAULT_PATH)
+if (ENABLE_CEF3)
+	find_library(CEF3_SHARED_LIBRARY NAMES cef PATHS ${CEF3_PREFIX}/Release NO_DEFAULT_PATH)
+	find_library(CEF3_WRAPPER_LIBRARY NAMES cef_dll_wrapper PATHS ${CEF3_PREFIX}/libcef_dll_wrapper NO_DEFAULT_PATH)
 
-if (CEF3_SHARED_LIBRARY)
-	message(STATUS "CEF library found: ${CEF3_SHARED_LIBRARY}")
-else()
-	message(FATAL_ERROR "CEF library not found in ${CEF3_PREFIX}")
+	if (CEF3_SHARED_LIBRARY)
+		message(STATUS "CEF library found: ${CEF3_SHARED_LIBRARY}")
+	else()
+		message(FATAL_ERROR "CEF library not found in ${CEF3_PREFIX}")
+	endif()
+
+	if (CEF3_WRAPPER_LIBRARY)
+		message(STATUS "CEF wrapper library found: ${CEF3_WRAPPER_LIBRARY}")
+	else()
+		message(FATAL_ERROR "CEF wrapper library not found in ${CEF3_PREFIX}")
+	endif()
+
+	add_library(CEF3_SHARED_LIBRARY SHARED IMPORTED)
+	add_library(CEF3_WRAPPER_LIBRARY STATIC IMPORTED)
+
+	set(CEF3_INCLUDE_DIR "${CEF3_PREFIX}")
+	message(STATUS "Added CEF includes in ${CEF3_PREFIX}")
+
+	add_definitions(-D_ENABLE_CEF3)
+
 endif()
-
-if (CEF3_WRAPPER_LIBRARY)
-	message(STATUS "CEF wrapper library found: ${CEF3_WRAPPER_LIBRARY}")
-else()
-	message(FATAL_ERROR "CEF wrapper library not found in ${CEF3_PREFIX}")
-endif()
-
-add_library(CEF3_SHARED_LIBRARY SHARED IMPORTED)
-add_library(CEF3_WRAPPER_LIBRARY STATIC IMPORTED)
-
-set(CEF3_INCLUDE_DIR "${CEF3_PREFIX}")
-message(STATUS "Added CEF includes in ${CEF3_PREFIX}")
 
 if(NOT MSVC)
 	set(USE_GPROF FALSE CACHE BOOL "Use -pg flag for g++")
@@ -560,10 +565,15 @@ set(client_SRCS
 	shader.cpp
 	sky.cpp
 	wieldmesh.cpp
-	mt_cef.cpp
 	${client_SCRIPT_SRCS}
 	${UNITTEST_CLIENT_SRCS}
 )
+if (ENABLE_CEF3)
+	set(client_SRCS
+		${client_SRCS}
+		mt_cef.cpp
+	)
+endif()
 list(SORT client_SRCS)
 
 # Server sources
@@ -588,9 +598,11 @@ include_directories(
 	${JSON_INCLUDE_DIR}
 	${X11_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
-	${CEF3_INCLUDE_DIR}
 )
 
+if (ENABLE_CEF3)
+	include_directories(${CEF3_INCLUDE_DIR})
+endif()
 
 if(USE_FREETYPE)
 	include_directories(${FREETYPE_INCLUDE_DIRS} ${CGUITTFONT_INCLUDE_DIR})
@@ -670,8 +682,9 @@ if(BUILD_CLIENT)
 	if (USE_SPATIAL)
 		target_link_libraries(${PROJECT_NAME} ${SPATIAL_LIBRARY})
 	endif()
-	target_link_libraries(${PROJECT_NAME} ${CEF3_SHARED_LIBRARY} ${CEF3_WRAPPER_LIBRARY})
-#	target_link_libraries(${PROJECT_NAME} ${CEF3_WRAPPER_LIBRARY})
+	if (ENABLE_CEF3)
+		target_link_libraries(${PROJECT_NAME} ${CEF3_SHARED_LIBRARY} ${CEF3_WRAPPER_LIBRARY})
+	endif()
 endif(BUILD_CLIENT)
 
 
@@ -711,8 +724,6 @@ if(BUILD_SERVER)
 			${CURL_LIBRARY}
 		)
 	endif()
-	target_link_libraries(${PROJECT_NAME} ${CEF3_SHARED_LIBRARY})
-	target_link_libraries(${PROJECT_NAME} ${CEF3_WRAPPER_LIBRARY})
 endif(BUILD_SERVER)
 
 # Blacklisted locales that don't work.

@@ -64,7 +64,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "sound.h"
 
+#ifdef _ENABLE_CEF3
 #include "mt_cef.h"
+#endif // _ENABLE_CEF3
 
 #if USE_SOUND
 	#include "sound_openal.h"
@@ -2064,7 +2066,7 @@ void Game::run()
 				flags.show_debug);
 		updateFrame(&graph, &stats, &runData, dtime, flags, cam_view);
 
-#ifndef SERVER
+#ifdef _ENABLE_CEF3
         MinetestBrowser::Update();
 #endif
 
