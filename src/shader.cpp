@@ -629,7 +629,8 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 		"NDT_NODEBOX",
 		"NDT_GLASSLIKE_FRAMED",
 		"NDT_FIRELIKE",
-		"NDT_GLASSLIKE_FRAMED_OPTIONAL"
+		"NDT_GLASSLIKE_FRAMED_OPTIONAL",
+		"NDT_INTERACTIVE"
 	};
 
 	for (int i = 0; i < 14; i++){

@@ -37,6 +37,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiscalingfilter.h"
 #include "nodedef.h"
 
+#ifdef _ENABLE_CEF3
+#include "mt_cef.h"
+#endif // _ENABLE_CEF3
 
 #ifdef __ANDROID__
 #include <GLES/gl.h>
@@ -616,19 +619,41 @@ u32 TextureSource::generateTexture(const std::string &name)
 	video::IVideoDriver *driver = m_device->getVideoDriver();
 	sanity_check(driver);
 
-	video::IImage *img = generateImage(name);
-
 	video::ITexture *tex = NULL;
 
-	if (img != NULL) {
+    if (str_starts_with(name, "^[browser:"))
+    {
+        Strfnd sf(name);
+
+        sf.next(":");
+        u32 width = stoi(sf.next("x"));
+        u32 height = stoi(sf.next(","));
+        core::dimension2d<u32> dim(width, height);
+        std::string browsername = sf.next(",");
+        std::string url = sf.next("^");
+
+#ifdef _ENABLE_CEF3
+        tex = driver->addTexture(dim, io::path(name.c_str()), irr::video::ECF_A8R8G8B8);
+
+        MinetestBrowser::GetInstance()->CreateWebPage(name, driver,
+            tex, dim, url);
+#endif // _ENABLE_CEF3
+    }
+    else
+    {
+        video::IImage *img = generateImage(name);
+
+        if (img != NULL) {
 #ifdef __ANDROID__
-		img = Align2Npot2(img, driver);
+            img = Align2Npot2(img, driver);
 #endif
-		// Create texture from resulting image
-		tex = driver->addTexture(name.c_str(), img);
-		guiScalingCache(io::path(name.c_str()), driver, img);
-		img->drop();
-	}
+            // Create texture from resulting image
+            tex = driver->addTexture(name.c_str(), img);
+            guiScalingCache(io::path(name.c_str()), driver, img);
+            img->drop();
+        }
+
+    }
 
 	/*
 		Add texture to caches (add NULL textures too)
@@ -1826,7 +1851,8 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			Only the channels that are mentioned in the mode string
 			will be inverted.
 		*/
-		else if (str_starts_with(part_of_name, "[invert:")) {
+		else if (str_starts_with(part_of_name, "[invert:"))
+		{
 			if (baseimg == NULL) {
 				errorstream << "generateImagePart(): baseimg == NULL "
 						<< "for part_of_name=\"" << part_of_name
@@ -1854,7 +1880,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			for (u32 x = 0; x < dim.Width; x++)
 			{
 				video::SColor c = baseimg->getPixel(x, y);
-				c.color ^= mask;	
+				c.color ^= mask;
 				baseimg->setPixel(x, y, c);
 			}
 		}
@@ -1900,6 +1926,22 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			// Replace baseimg
 			baseimg->drop();
 			baseimg = img;
+		}
+		/*
+			[browser:WxH,name,URL
+			Create a web browser of specified Width and Height with
+			name (to register in the MinetestBrowser) and open the
+			give URL. This section is only there to verify that the
+			baseimg is not set, and if it is, generate an error
+		*/
+		else if (str_starts_with(part_of_name, "[browser:"))
+		{
+			if (baseimg != NULL) {
+				errorstream << "generateImagePart(): baseimg != NULL "
+						<< "for part_of_name=\"" << part_of_name
+						<< "\", cancelling." << std::endl;
+				return false;
+			}
 		}
 		else
 		{

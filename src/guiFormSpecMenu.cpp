@@ -53,6 +53,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlicht_changes/static_text.h"
 #include "guiscalingfilter.h"
 
+#ifdef _ENABLE_CEF3
+#include "mt_cef.h"
+#endif // _ENABLE_CEF3
+
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
 #include "intlGUIEditBox.h"
 #endif
@@ -145,6 +149,9 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 
 void GUIFormSpecMenu::removeChildren()
 {
+#ifdef _ENABLE_CEF3
+	MinetestBrowser::GetInstance()->CloseWebPage("formspec");
+#endif
 	const core::list<gui::IGUIElement*> &children = getChildren();
 
 	while(!children.empty()) {
@@ -1774,6 +1781,38 @@ void GUIFormSpecMenu::parseAnchor(parserData *data, const std::string &element)
 	errorstream << "Invalid anchor element (" << parts.size() << "): '" << element << "'" << std::endl;
 }
 
+void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
+{
+	std::vector<std::string> parts = split(element,';');
+
+	if (((parts.size() == 2) || (parts.size() == 3)) ||
+		((parts.size() > 3) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	{
+		std::vector<std::string> v_pos = split(parts[0],',');
+		std::vector<std::string> v_geom = split(parts[1],',');
+		std::string url = parts[2];
+
+		MY_CHECKPOS("browser",0);
+		MY_CHECKGEOM("browser",1);
+
+		v2s32 pos = padding + AbsoluteRect.UpperLeftCorner + pos_offset * spacing;
+		pos.X += stof(v_pos[0]) * (float)spacing.X - ((float)spacing.X - (float)imgsize.X)/2;
+		pos.Y += stof(v_pos[1]) * (float)spacing.Y - ((float)spacing.Y - (float)imgsize.Y)/2;
+
+		v2s32 geom;
+		geom.X = stof(v_geom[0]) * (float)spacing.X;
+		geom.Y = stof(v_geom[1]) * (float)spacing.Y;
+
+#ifdef _ENABLE_CEF3
+		MinetestBrowser::GetInstance()->CreateWebPage(
+			"formspec", Environment->getVideoDriver(), Environment, pos, geom, url
+		);
+#endif // _ENABLE_CEF3
+		return;
+	}
+	errorstream<< "Invalid browser element(" << parts.size() << "): '" << element << "'"  << std::endl;
+}
+
 void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 {
 	//some prechecks
@@ -1931,6 +1970,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 
 	if (type == "scrollbar") {
 		parseScrollBar(data, description);
+		return;
+	}
+
+	if (type == "browser") {
+		parseBrowser(data, description);
 		return;
 	}
 
@@ -3016,6 +3060,19 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 				return true;
 			}
 		}
+
+#ifdef _ENABLE_CEF3
+        // Unfortunately at this point the mouse x and y seem to be wrong, so
+        // unfortunately we need to test whether the formspec browser exists
+        // or not .......
+        WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+        if (webPage != NULL) {
+            if (event.KeyInput.PressedDown) {
+                webPage->OnKeyPressed(event.KeyInput);
+            }
+            return true;
+        }
+#endif // _ENABLE_CEF3
 	}
 	// Mouse wheel events: send to hovered element instead of focused
 	if(event.EventType==EET_MOUSE_INPUT_EVENT
@@ -3025,6 +3082,15 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(
 				core::position2d<s32>(x, y));
+
+#ifdef _ENABLE_CEF3
+        if (strcmp(hovered->getName(), "browser") == 0) {
+            WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+            webPage->OnMouseWheel(x, y, event.MouseInput.Wheel);
+            return true;
+        }
+#endif // _ENABLE_CEF3
+
 		if (hovered && isMyChild(hovered)) {
 			hovered->OnEvent(event);
 			return true;
@@ -3037,6 +3103,37 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(
 				core::position2d<s32>(x, y));
+
+#ifdef _ENABLE_CEF3
+        // If a browser was created via formspec, then it will have been named
+        // "browser". This is a hack currently as I can't use numeric IDs and
+        // testing of the WebPage instance named "formspec" exists is also not
+        // very nice ...
+        if (strcmp(hovered->getName(), "browser") == 0) {
+            WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+            // TODO: If webPage is NULL, do error handling!
+            switch (event.MouseInput.Event) {
+                case EMIE_MOUSE_MOVED:
+                    webPage->OnMouseMoved(x, y);
+                    return true;
+                case EMIE_LMOUSE_PRESSED_DOWN:
+                    webPage->OnLeftMousePressedDown(x, y);
+                    return true;
+                case EMIE_LMOUSE_LEFT_UP:
+                    webPage->OnLeftMouseLeftUp(x, y);
+                    return true;
+                case EMIE_LMOUSE_DOUBLE_CLICK:
+                    webPage->OnLeftMouseDoubleClick(x, y);
+                    return true;
+                default:
+                    // The click took place on the browser, so no need to
+                    // let the system search for other potential candidates
+                    // to handle the event
+                    return true;
+            }
+        }
+#endif // _ENABLE_CEF3
+
 		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			m_old_tooltip_id = -1;
 			m_old_tooltip = L"";

@@ -164,6 +164,8 @@ enum NodeDrawType
 	NDT_GLASSLIKE_FRAMED_OPTIONAL,	// enabled -> connected, disabled -> Glass-like
 									// uses 2 textures, one for frames, second for faces
 	NDT_MESH, // Uses static meshes
+
+	NDT_INTERACTIVE, // Interactive node allowing for more fine grained control
 };
 
 /*
@@ -215,6 +217,7 @@ struct ContentFeatures
 	u8 solidness; // Used when choosing which face is drawn
 	u8 visual_solidness; // When solidness=0, this tells how it looks like
 	bool backface_culling;
+	bool is_interactive;
 #endif
 
 	// Server-side cached callback existence for fast skipping

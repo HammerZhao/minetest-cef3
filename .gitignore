@@ -32,6 +32,7 @@ gtags.files
 /bin/
 /games/*
 !/games/minimal/
+!/games/browser_test/
 /cache
 /textures/*
 !/textures/base/

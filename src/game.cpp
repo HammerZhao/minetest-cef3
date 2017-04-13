@@ -64,6 +64,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "sound.h"
 
+#ifdef _ENABLE_CEF3
+#include "mt_cef.h"
+#endif // _ENABLE_CEF3
+
 #if USE_SOUND
 	#include "sound_openal.h"
 #endif
@@ -1766,6 +1770,11 @@ void Game::run()
 		processPlayerInteraction(&runData, dtime, flags.show_hud,
 				flags.show_debug);
 		updateFrame(&graph, &stats, &runData, dtime, flags, cam_view);
+
+#ifdef _ENABLE_CEF3
+        MinetestBrowser::Update();
+#endif
+
 		updateProfilerGraphs(&graph);
 
 		// Update if minimap has been disabled by the server
@@ -3024,9 +3033,13 @@ void Game::toggleFullViewRange(float *statustext_time)
 		L"Disabled full viewing range",
 		L"Enabled full viewing range"
 	};
+	static const char *infostreammsg[] = {
+		"Disabled full viewing range",
+		"Enabled full viewing range"
+	};
 
 	draw_control->range_all = !draw_control->range_all;
-	infostream << msg[draw_control->range_all] << std::endl;
+	infostream << infostreammsg[draw_control->range_all] << std::endl;
 	statustext = msg[draw_control->range_all];
 	*statustext_time = 0;
 }
@@ -3783,6 +3796,14 @@ void Game::handlePointingAtNode(GameRunData *runData,
 	if (runData->nodig_delay_timer <= 0.0 && isLeftPressed()
 			&& client->checkPrivilege("interact")) {
 		handleDigging(runData, pointed, nodepos, playeritem_toolcap, dtime);
+	}
+
+	if (getLeftClicked()) {
+		MapNode n = map.getNodeNoEx(nodepos);
+        if (nodedef_manager->get(n).is_interactive) {
+//            nodedef_manager->get(n)
+		}
+
 	}
 
 	if ((getRightClicked() ||

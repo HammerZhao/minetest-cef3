@@ -36,6 +36,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "clientlauncher.h"
 #include "version.h"
 
+#ifdef _ENABLE_CEF3
+#include "mt_cef.h"
+#endif // _ENABLE_CEF3
+
 /* mainmenumanager.h
  */
 gui::IGUIEnvironment *guienv = NULL;
@@ -184,6 +188,10 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	bool retval = true;
 	bool *kill = porting::signal_handler_killstatus();
 
+#ifdef _ENABLE_CEF3
+	MinetestBrowser::Initialize();
+#endif // _ENABLE_CEF3
+
 	while (device->run() && !*kill && !g_gamecallback->shutdown_requested)
 	{
 		// Set the window caption
@@ -294,6 +302,10 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			break;
 		}
 	} // Menu-game loop
+
+#ifdef _ENABLE_CEF3
+	MinetestBrowser::Shutdown();
+#endif // _ENABLE_CEF3
 
 	g_menuclouds->drop();
 	g_menucloudsmgr->drop();
