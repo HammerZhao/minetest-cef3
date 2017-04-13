@@ -737,7 +737,7 @@ int ObjectRef::l_set_properties(lua_State *L)
 	ObjectProperties *prop = co->accessObjectProperties();
 	if (!prop)
 		return 0;
-	read_object_properties(L, 2, prop);
+	read_object_properties(L, 2, prop, getServer(L)->idef());
 	co->notifyObjectPropertiesModified();
 	return 0;
 }
@@ -1823,7 +1823,7 @@ void ObjectRef::Register(lua_State *L)
 }
 
 const char ObjectRef::className[] = "ObjectRef";
-const luaL_reg ObjectRef::methods[] = {
+const luaL_Reg ObjectRef::methods[] = {
 	// ServerActiveObject
 	luamethod(ObjectRef, remove),
 	luamethod_aliased(ObjectRef, get_pos, getpos),

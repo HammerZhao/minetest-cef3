@@ -148,11 +148,13 @@ Server::Server(
 		const SubgameSpec &gamespec,
 		bool simple_singleplayer_mode,
 		bool ipv6,
+		bool dedicated,
 		ChatInterface *iface
 	):
 	m_path_world(path_world),
 	m_gamespec(gamespec),
 	m_simple_singleplayer_mode(simple_singleplayer_mode),
+	m_dedicated(dedicated),
 	m_async_fatal_error(""),
 	m_env(NULL),
 	m_con(PROTOCOL_ID,
@@ -629,10 +631,10 @@ void Server::AsyncRunStep(bool initial_step)
 	// send masterserver announce
 	{
 		float &counter = m_masterserver_timer;
-		if(!isSingleplayer() && (!counter || counter >= 300.0) &&
-				g_settings->getBool("server_announce"))
-		{
-			ServerList::sendAnnounce(counter ? "update" : "start",
+		if (!isSingleplayer() && (!counter || counter >= 300.0) &&
+				g_settings->getBool("server_announce")) {
+			ServerList::sendAnnounce(counter ? ServerList::AA_UPDATE :
+						ServerList::AA_START,
 					m_bind_addr.getPort(),
 					m_clients.getPlayerNames(),
 					m_uptime.get(),
@@ -640,7 +642,8 @@ void Server::AsyncRunStep(bool initial_step)
 					m_lag,
 					m_gamespec.id,
 					Mapgen::getMapgenName(m_emerge->mgparams->mgtype),
-					m_mods);
+					m_mods,
+					m_dedicated);
 			counter = 0.01;
 		}
 		counter += dtime;
@@ -1108,15 +1111,14 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	// Send inventory
 	SendInventory(playersao);
 
-	// Send HP
-	SendPlayerHPOrDie(playersao);
+	// Send HP or death screen
+	if (playersao->isDead())
+		SendDeathscreen(peer_id, false, v3f(0,0,0));
+	else
+		SendPlayerHPOrDie(playersao);
 
 	// Send Breath
 	SendPlayerBreath(playersao);
-
-	// Show death screen if necessary
-	if (playersao->isDead())
-		SendDeathscreen(peer_id, false, v3f(0,0,0));
 
 	// Note things in chat if not in simple singleplayer mode
 	if (!m_simple_singleplayer_mode && g_settings->getBool("show_statusline_on_connect")) {
@@ -2144,14 +2146,6 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 		if (client != 0) {
 			pkt << p << n.param0 << n.param1 << n.param2
 					<< (u8) (remove_metadata ? 0 : 1);
-
-			if (!remove_metadata) {
-				if (client->net_proto_version <= 21) {
-					// Old clients always clear metadata; fix it
-					// by sending the full block again.
-					client->SetBlockNotSent(getNodeBlockPos(p));
-				}
-			}
 		}
 		m_clients.unlock();
 
@@ -2185,7 +2179,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	std::ostringstream os(std::ios_base::binary);
 	block->serialize(os, ver, false);
-	block->serializeNetworkSpecific(os, net_proto_version);
+	block->serializeNetworkSpecific(os);
 	std::string s = os.str();
 
 	NetworkPacket pkt(TOCLIENT_BLOCKDATA, 2 + 2 + 2 + 2 + s.size(), peer_id);
@@ -2826,25 +2820,14 @@ std::wstring Server::handleChat(const std::string &name, const std::wstring &wna
 	// Whether to send line to the player that sent the message, or to all players
 	bool broadcast_line = true;
 
-	// Commands are implemented in Lua, so only catch invalid
-	// commands that were not "eaten" and send an error back
-	if (wmessage[0] == L'/') {
-		std::wstring wcmd = wmessage.substr(1);
+	if (check_shout_priv && !checkPriv(name, "shout")) {
+		line += L"-!- You don't have permission to shout.";
 		broadcast_line = false;
-		if (wcmd.length() == 0)
-			line += L"-!- Empty command";
-		else
-			line += L"-!- Invalid command: " + str_split(wcmd, L' ')[0];
 	} else {
-		if (check_shout_priv && !checkPriv(name, "shout")) {
-			line += L"-!- You don't have permission to shout.";
-			broadcast_line = false;
-		} else {
-			line += L"<";
-			line += wname;
-			line += L"> ";
-			line += wmessage;
-		}
+		line += L"<";
+		line += wname;
+		line += L"> ";
+		line += wmessage;
 	}
 
 	/*
@@ -3574,15 +3557,8 @@ void dedicated_server_loop(Server &server, bool &kill)
 		}
 		server.step(steplen);
 
-		if(server.getShutdownRequested() || kill)
-		{
-			infostream<<"Dedicated server quitting"<<std::endl;
-#if USE_CURL
-			if(g_settings->getBool("server_announce"))
-				ServerList::sendAnnounce("delete", server.m_bind_addr.getPort());
-#endif
+		if (server.getShutdownRequested() || kill)
 			break;
-		}
 
 		/*
 			Profiler
@@ -3596,4 +3572,11 @@ void dedicated_server_loop(Server &server, bool &kill)
 			}
 		}
 	}
+
+	infostream << "Dedicated server quitting" << std::endl;
+#if USE_CURL
+	if (g_settings->getBool("server_announce"))
+		ServerList::sendAnnounce(ServerList::AA_DELETE,
+			server.m_bind_addr.getPort());
+#endif
 }

@@ -8,14 +8,13 @@ Introduction
 
 **WARNING: The client API is currently unstable, and may break/change without warning.**
 
-Content and functionality can be added to Minetest 0.4 by using Lua
+Content and functionality can be added to Minetest 0.4.15-dev+ by using Lua
 scripting in run-time loaded mods.
 
 A mod is a self-contained bunch of scripts, textures and other related
 things that is loaded by and interfaces with Minetest.
 
-Mods are contained and ran solely on the server side. Definitions and media
-files are automatically transferred to the client.
+Transfering client-sided mods form the server to the client is planned, but not implemented yet.
 
 If you see a deficiency in the API, feel free to attempt to add the
 functionality in the engine and API. You can send such improvements as
@@ -66,6 +65,8 @@ On an installed version on Linux:
 
 Modpack support
 ----------------
+**NOTE: Not implemented yet.**
+
 Mods can be put in a subdirectory, if the parent directory, which otherwise
 should be a mod, contains a file named `modpack.txt`. This file shall be
 empty, except for lines starting with `#`, which are comments.
@@ -73,28 +74,16 @@ empty, except for lines starting with `#`, which are comments.
 Mod directory structure
 ------------------------
 
-    mods
-    |-- modname
-    |   |-- depends.txt
-    |   |-- screenshot.png
-    |   |-- description.txt
-    |   |-- settingtypes.txt
-    |   |-- init.lua
-    |   |-- models
-    |   |-- textures
-    |   |   |-- modname_stuff.png
-    |   |   `-- modname_something_else.png
-    |   |-- sounds
-    |   |-- media
-    |   `-- <custom data>
-    `-- another
-
+    clientmods
+    ├── modname
+    |   ├── depends.txt
+    |   ├── init.lua
+    └── another
 
 ### modname
-The location of this directory can be fetched by using
-`minetest.get_modpath(modname)`.
+The location of this directory.
 
-### `depends.txt`
+### depends.txt
 List of mods that have to be loaded before loading this mod.
 
 A single line contains a single modname.
@@ -103,18 +92,7 @@ Optional dependencies can be defined by appending a question mark
 to a single modname. Their meaning is that if the specified mod
 is missing, that does not prevent this mod from being loaded.
 
-### `screenshot.png`
-A screenshot shown in the mod manager within the main menu. It should
-have an aspect ratio of 3:2 and a minimum size of 300×200 pixels.
-
-### `description.txt`
-A File containing description to be shown within mainmenu.
-
-### `settingtypes.txt`
-A file in the same format as the one in builtin. It will be parsed by the
-settings menu and the settings will be displayed in the "Mods" category.
-
-### `init.lua`
+### init.lua
 The main Lua script. Running this script should register everything it
 wants to register. Subsequent execution depends on minetest calling the
 registered callbacks.
@@ -151,29 +129,10 @@ when registering it.
 
 The `:` prefix can also be used for maintaining backwards compatibility.
 
-### Aliases
-Aliases can be added by using `minetest.register_alias(name, convert_to)` or
-`minetest.register_alias_force(name, convert_to).
-
-This will make Minetest to convert things called name to things called
-`convert_to`.
-
-The only difference between `minetest.register_alias` and
-`minetest.register_alias_force` is that if an item called `name` exists,
-`minetest.register_alias` will do nothing while
-`minetest.register_alias_force` will unregister it.
-
-This can be used for maintaining backwards compatibility.
-
-This can be also used for setting quick access names for things, e.g. if
-you have an item called `epiclylongmodname:stuff`, you could do
-
-    minetest.register_alias("stuff", "epiclylongmodname:stuff")
-
-and be able to use `/giveme stuff`.
-
 Sounds
 ------
+**NOTE: max_hear_distance and connecting to objects is not implemented.**
+
 Only Ogg Vorbis files are supported.
 
 For positional playing of sounds, only single-channel (mono) files are
@@ -199,18 +158,12 @@ from the available ones of the following files:
 
 Examples of sound parameter tables:
 
-    -- Play locationless on all clients
+    -- Play locationless
     {
         gain = 1.0, -- default
     }
-    -- Play locationless to one player
+    -- Play locationless, looped
     {
-        to_player = name,
-        gain = 1.0, -- default
-    }
-    -- Play locationless to one player, looped
-    {
-        to_player = name,
         gain = 1.0, -- default
         loop = true,
     }
@@ -228,10 +181,9 @@ Examples of sound parameter tables:
         loop = true,
     }
 
-Looped sounds must either be connected to an object or played locationless to
-one player using `to_player = name,`
+Looped sounds must either be connected to an object or played locationless.
 
-### `SimpleSoundSpec`
+### SimpleSoundSpec
 * e.g. `""`
 * e.g. `"default_place_node"`
 * e.g. `{}`
@@ -247,7 +199,7 @@ Representations of simple things
 
 For helper functions see "Vector helpers".
 
-### `pointed_thing`
+### pointed_thing
 * `{type="nothing"}`
 * `{type="node", under=pos, above=pos}`
 * `{type="object", ref=ObjectRef}`
@@ -287,8 +239,7 @@ since, by default, no schematic attributes are set.
 
 Formspec
 --------
-Formspec defines a menu. Currently not much else than inventories are
-supported. It is a string, with a somewhat strange format.
+Formspec defines a menu. It is a string, with a somewhat strange format.
 
 Spaces and newlines can be inserted between the blocks, as is used in the
 examples.
@@ -653,7 +604,7 @@ Helper functions
 * `table.copy(table)`: returns a table
     * returns a deep copy of `table`
 
-`minetest` namespace reference
+Minetest namespace reference
 ------------------------------
 
 ### Utilities
@@ -669,7 +620,7 @@ Helper functions
   reliable or verifyable. Compatible forks will have a different name and
   version entirely. To check for the presence of engine features, test
   whether the functions exported by the wanted features exist. For example:
-  `if core.nodeupdate then ... end`.
+  `if minetest.nodeupdate then ... end`.
 
 ### Logging
 * `minetest.debug(...)`
@@ -688,6 +639,8 @@ Call these functions only at load time!
     * **Warning**: If the client terminates abnormally (i.e. crashes), the registered
       callbacks **will likely not be run**. Data should be saved at
       semi-frequent intervals as well as on server shutdown.
+* `minetest.register_on_connect(func())`
+    * Called at the end of client connection (when player is loaded onto map)
 * `minetest.register_on_receiving_chat_message(func(name, message))`
     * Called always when a client receive a message
     * Return `true` to mark the message as handled, which means that it will not be shown to chat
@@ -732,10 +685,24 @@ Call these functions only at load time!
       for unloaded areas.
 * `minetest.get_node_or_nil(pos)`
     * Same as `get_node` but returns `nil` for unloaded areas.
+* `minetest.get_meta(pos)`
+    * Get a `NodeMetaRef` at that position
 
 ### Player
 * `minetest.get_wielded_item()`
     * Returns the itemstack the local player is holding
+* `minetest.localplayer`
+    * Reference to the LocalPlayer object. See `LocalPlayer` class reference for methods.
+
+### Client Environment
+* `minetest.get_player_names()`
+    * Returns list of player names on server
+* `minetest.disconnect()`
+    * Disconnect from the server and exit to main menu.
+    * Returns `false` if the client is already disconnecting otherwise returns `true`.
+* `minetest.get_protocol_version()`
+    * Returns the protocol version of the server.
+    * Might not be accurate at start up as the client might not be connected to the server yet, in that case it will return 0.
 
 ### Misc.
 * `minetest.parse_json(string[, nullvalue])`: returns something
@@ -780,24 +747,28 @@ Call these functions only at load time!
     * Encodes a string in base64.
 * `minetest.decode_base64(string)`: returns string
     * Decodes a string encoded in base64.
-* `core.gettext(string) : returns string
+* `minetest.gettext(string) : returns string
     * look up the translation of a string in the gettext message catalog
 * `fgettext_ne(string, ...)`
-    * call core.gettext(string), replace "$1"..."$9" with the given
+    * call minetest.gettext(string), replace "$1"..."$9" with the given
       extra arguments and return the result
 * `fgettext(string, ...)` : returns string
-    * same as fgettext_ne(), but calls core.formspec_escape before returning result
+    * same as fgettext_ne(), but calls minetest.formspec_escape before returning result
+* `minetest.pointed_thing_to_face_pos(placer, pointed_thing)`: returns a position
+    * returns the exact position on the surface of a pointed node
 
 ### UI
 * `minetest.ui.minimap`
     * Reference to the minimap object. See `Minimap` class reference for methods.
-* `show_formspec(formname, formspec)` : returns true on success
+* `minetest.show_formspec(formname, formspec)` : returns true on success
 	* Shows a formspec to the player
+* `minetest.display_chat_message(message)` returns true on success
+	* Shows a chat message to the current player.
 
 Class reference
 ---------------
 
-### `Minimap`
+### Minimap
 An interface to manipulate minimap on client UI
 
 * `show()`: shows the minimap (if not disabled by server)
@@ -810,7 +781,121 @@ An interface to manipulate minimap on client UI
 * `get_mode()`: returns the current minimap mode
 * `toggle_shape()`: toggles minimap shape to round or square.
 
-### `Settings`
+### LocalPlayer
+An interface to retrieve information about the player. The player is
+not accessible until the client is fully done loading and therefore
+not at module init time.
+
+To get the localplayer handle correctly, use `on_connect()` as follows:
+
+```lua
+local localplayer
+minetest.register_on_connect(function()
+        localplayer = minetest.localplayer
+end)
+```
+
+Methods:
+
+* `get_pos()`
+    * returns current player current position
+* `get_velocity()`
+    * returns player speed vector
+* `get_hp()`
+    * returns player HP
+* `get_name()`
+    * returns player name
+* `got_teleported()`
+    * returns true if player was teleported
+* `is_attached()`
+    * returns true if player is attached
+* `is_touching_ground()`
+    * returns true if player touching ground
+* `is_in_liquid()`
+    * returns true if player is in a liquid (This oscillates so that the player jumps a bit above the surface)
+* `is_in_liquid_stable()`
+    * returns true if player is in a stable liquid (This is more stable and defines the maximum speed of the player)
+* `get_liquid_viscosity()`
+    * returns liquid viscosity (Gets the viscosity of liquid to calculate friction)
+* `is_climbing()`
+    * returns true if player is climbing
+* `swimming_vertical()`
+    * returns true if player is swimming in vertical
+* `get_physics_override()`
+    * returns:
+
+```lua
+    {
+        speed = float,
+        jump = float,
+        gravity = float,
+        sneak = boolean,
+        sneak_glitch = boolean
+    }
+```
+
+* `get_override_pos()`
+    * returns override position
+* `get_last_pos()`
+    * returns last player position before the current client step
+* `get_last_velocity()`
+    * returns last player speed
+* `get_breath()`
+    * returns the player's breath
+* `get_look_dir()`
+    * returns look direction vector
+* `get_look_horizontal()`
+    * returns look horizontal angle
+* `get_look_vertical()`
+    * returns look vertical angle
+* `get_eye_pos()`
+    * returns the player's eye position
+* `get_eye_offset()`
+    * returns the player's eye shift vector
+* `get_movement_acceleration()`
+    * returns acceleration of the player in different environments:
+
+```lua
+    {
+       fast = float,
+       air = float,
+       default = float,
+    }
+```
+
+* `get_movement_speed()`
+    * returns player's speed in different environments:
+
+```lua
+    {
+       walk = float,
+       jump = float,
+       crouch = float,
+       fast = float,
+       climb = float,
+    }
+```
+
+* `get_movement()`
+    * returns player's movement in different environments:
+
+```lua
+    {
+       liquid_fluidity = float,
+       liquid_sink = float,
+       liquid_fluidity_smooth = float,
+       gravity = float,
+    }
+```
+
+* `get_last_look_horizontal()`:
+    * returns last look horizontal angle
+* `get_last_look_vertical()`:
+    * returns last look vertical angle
+* `get_key_pressed()`:
+    * returns last key typed by the player
+
+### Settings
 An interface to read config files in the format of `minetest.conf`.
 
 It can be created via `Settings(filename)`.
@@ -825,7 +910,18 @@ It can be created via `Settings(filename)`.
     * write changes to file
 * `to_table()`: returns `{[key1]=value1,...}`
 
-Definition tables
+### NodeMetaRef
+Node metadata: reference extra data and functionality stored in a node.
+Can be obtained via `minetest.get_meta(pos)`.
+
+#### Methods
+* `get_string(name)`
+* `get_int(name)`
+* `get_float(name)`
+* `to_table()`: returns `nil` or a table with keys:
+    * `fields`: key-value storage
+    * `inventory`: `{list1 = {}, ...}}`
+
 -----------------
 
 ### Chat command definition (`register_chatcommand`)
@@ -833,8 +929,7 @@ Definition tables
     {
         params = "<name> <privilege>", -- Short parameter description
         description = "Remove privilege from player", -- Full description
-        privs = {privs=true}, -- Require the "privs" privilege to run
-        func = function(name, param), -- Called when command is run.
+        func = function(param), -- Called when command is run.
                                       -- Returns boolean success and text output.
     }
 
@@ -843,19 +938,25 @@ Escape sequences
 Most text can contain escape sequences, that can for example color the text.
 There are a few exceptions: tab headers, dropdowns and vertical labels can't.
 The following functions provide escape sequences:
-* `core.get_color_escape_sequence(color)`:
+* `minetest.get_color_escape_sequence(color)`:
     * `color` is a ColorString
     * The escape sequence sets the text color to `color`
-* `core.colorize(color, message)`:
+* `minetest.colorize(color, message)`:
     * Equivalent to:
-      `core.get_color_escape_sequence(color) ..
+      `minetest.get_color_escape_sequence(color) ..
        message ..
-       core.get_color_escape_sequence("#ffffff")`
+       minetest.get_color_escape_sequence("#ffffff")`
 * `color.get_background_escape_sequence(color)`
     * `color` is a ColorString
     * The escape sequence sets the background of the whole text element to
       `color`. Only defined for item descriptions and tooltips.
-	  
+* `color.strip_foreground_colors(str)`
+    * Removes foreground colors added by `get_color_escape_sequence`.
+* `color.strip_background_colors(str)`
+    * Removes background colors added by `get_background_escape_sequence`.
+* `color.strip_colors(str)`
+    * Removes all color escape sequences.
+
 `ColorString`
 -------------
 `#RGB` defines a color in hexadecimal format.
@@ -870,4 +971,4 @@ Named colors are also supported and are equivalent to
 [CSS Color Module Level 4](http://dev.w3.org/csswg/css-color/#named-colors).
 To specify the value of the alpha channel, append `#AA` to the end of the color name
 (e.g. `colorname#08`). For named colors the hexadecimal string representing the alpha
-value must (always) be two hexadecima
+value must (always) be two hexadecimal digits.

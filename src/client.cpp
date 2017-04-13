@@ -46,6 +46,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "serialization.h"
 #include "guiscalingfilter.h"
 #include "script/clientscripting.h"
+#include "game.h"
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -156,6 +157,12 @@ QueuedMeshUpdate *MeshUpdateQueue::pop()
 	MeshUpdateThread
 */
 
+MeshUpdateThread::MeshUpdateThread() : UpdateThread("Mesh")
+{
+	m_generation_interval = g_settings->getU16("mesh_generation_interval");
+	m_generation_interval = rangelim(m_generation_interval, 0, 50);
+}
+
 void MeshUpdateThread::enqueueUpdate(v3s16 p, MeshMakeData *data,
 		bool ack_block_to_server, bool urgent)
 {
@@ -167,7 +174,8 @@ void MeshUpdateThread::doUpdate()
 {
 	QueuedMeshUpdate *q;
 	while ((q = m_queue_in.pop())) {
-
+		if (m_generation_interval)
+			sleep_ms(m_generation_interval);
 		ScopeProfiler sp(g_profiler, "Client: Mesh making");
 
 		MapBlockMesh *mesh_new = new MapBlockMesh(q->data, m_camera_offset);
@@ -198,7 +206,8 @@ Client::Client(
 		IWritableNodeDefManager *nodedef,
 		ISoundManager *sound,
 		MtEventManager *event,
-		bool ipv6
+		bool ipv6,
+		GameUIFlags *game_ui_flags
 ):
 	m_packetcounter_timer(0.0),
 	m_connection_reinit_timer(0.1),
@@ -250,7 +259,9 @@ Client::Client(
 	m_state(LC_Created),
 	m_localdb(NULL),
 	m_script(NULL),
-	m_mod_storage_save_timer(10.0f)
+	m_mod_storage_save_timer(10.0f),
+	m_game_ui_flags(game_ui_flags),
+	m_shutdown(false)
 {
 	// Add local player
 	m_env.setLocalPlayer(new LocalPlayer(this, playername));
@@ -336,6 +347,7 @@ const ModSpec* Client::getModSpec(const std::string &modname) const
 
 void Client::Stop()
 {
+	m_shutdown = true;
 	// Don't disable this part when modding is disabled, it's used in builtin
 	m_script->on_shutdown();
 	//request all client managed threads to stop
@@ -351,14 +363,12 @@ void Client::Stop()
 
 bool Client::isShutdown()
 {
-
-	if (!m_mesh_update_thread.isRunning()) return true;
-
-	return false;
+	return m_shutdown || !m_mesh_update_thread.isRunning();
 }
 
 Client::~Client()
 {
+	m_shutdown = true;
 	m_con.Disconnect();
 
 	m_mesh_update_thread.stop();
@@ -1854,6 +1864,12 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 
 	m_state = LC_Ready;
 	sendReady();
+
+	if (g_settings->getBool("enable_client_modding")) {
+		m_script->on_client_ready(m_env.getLocalPlayer());
+		m_script->on_connect();
+	}
+
 	text = wgettext("Done!");
 	draw_load_screen(text, device, guienv, 0, 100);
 	infostream<<"Client::afterContentReceived() done"<<std::endl;
@@ -1933,6 +1949,36 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 bool Client::shouldShowMinimap() const
 {
 	return !m_minimap_disabled_by_server;
+}
+
+void Client::showGameChat(const bool show)
+{
+	m_game_ui_flags->show_chat = show;
+}
+
+void Client::showGameHud(const bool show)
+{
+	m_game_ui_flags->show_hud = show;
+}
+
+void Client::showMinimap(const bool show)
+{
+	m_game_ui_flags->show_minimap = show;
+}
+
+void Client::showProfiler(const bool show)
+{
+	m_game_ui_flags->show_profiler_graph = show;
+}
+
+void Client::showGameFog(const bool show)
+{
+	m_game_ui_flags->force_fog_off = !show;
+}
+
+void Client::showGameDebug(const bool show)
+{
+	m_game_ui_flags->show_debug = show;
 }
 
 // IGameDef interface

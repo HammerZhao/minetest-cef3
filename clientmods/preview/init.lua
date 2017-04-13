@@ -6,6 +6,10 @@ core.register_on_shutdown(function()
 	print("[PREVIEW] shutdown client")
 end)
 
+core.register_on_connect(function()
+	print("[PREVIEW] Player connection completed")
+end)
+
 -- This is an example function to ensure it's working properly, should be removed before merge
 core.register_on_receiving_chat_messages(function(message)
 	print("[PREVIEW] Received message " .. message)
@@ -69,6 +73,7 @@ core.after(2, function()
 	print("[PREVIEW] loaded " .. modname .. " mod")
 	modstorage:set_string("current_mod", modname)
 	print(modstorage:get_string("current_mod"))
+	print("Server version:" .. core.get_protocol_version())
 	preview_minimap()
 end)
 
@@ -102,7 +107,7 @@ core.register_on_punchnode(function(pos, node)
 	print(dump(itemstack:get_count()))
 	print(dump(itemstack:get_wear()))
 	print(dump(itemstack:get_meta()))
-	print(dump(itemstack:get_metadata()))
+	print(dump(itemstack:get_metadata()
 	print(dump(itemstack:is_known()))
 	--print(dump(itemstack:get_definition()))
 	print(dump(itemstack:get_tool_capabilities()))
@@ -120,3 +125,4 @@ core.register_on_punchnode(function(pos, node)
 	print("node:" .. dump(node))
 	return false
 end)
+

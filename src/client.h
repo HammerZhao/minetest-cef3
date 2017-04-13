@@ -120,13 +120,14 @@ class MeshUpdateThread : public UpdateThread
 {
 private:
 	MeshUpdateQueue m_queue_in;
+	int m_generation_interval;
 
 protected:
 	virtual void doUpdate();
 
 public:
 
-	MeshUpdateThread() : UpdateThread("Mesh") {}
+	MeshUpdateThread();
 
 	void enqueueUpdate(v3s16 p, MeshMakeData *data,
 			bool ack_block_to_server, bool urgent);
@@ -307,6 +308,7 @@ private:
 };
 
 class ClientScripting;
+struct GameUIFlags;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
@@ -326,7 +328,8 @@ public:
 			IWritableNodeDefManager *nodedef,
 			ISoundManager *sound,
 			MtEventManager *event,
-			bool ipv6
+			bool ipv6,
+			GameUIFlags *game_ui_flags
 	);
 
 	~Client();
@@ -578,6 +581,13 @@ public:
 		m_client_event_queue.push(event);
 	}
 
+	void showGameChat(const bool show = true);
+	void showGameHud(const bool show = true);
+	void showMinimap(const bool show = true);
+	void showProfiler(const bool show = true);
+	void showGameFog(const bool show = true);
+	void showGameDebug(const bool show = true);
+
 private:
 
 	// Virtual methods from con::PeerHandler
@@ -725,7 +735,9 @@ private:
 	bool m_modding_enabled;
 	UNORDERED_MAP<std::string, ModMetadata *> m_mod_storages;
 	float m_mod_storage_save_timer;
+	GameUIFlags *m_game_ui_flags;
 
+	bool m_shutdown;
 	DISABLE_CLASS_COPY(Client);
 };
 

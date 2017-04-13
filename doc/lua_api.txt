@@ -658,6 +658,10 @@ node definition:
       The first five bits of `param2` tells which color
       is picked from the palette.
       The palette should have 32 pixels.
+    paramtype2 == "glasslikeliquidlevel"
+    ^ Only valid for "glasslike_framed" or "glasslike_framed_optional" drawtypes.
+      param2 defines 64 levels of internal liquid.
+      Liquid texture is defined using `special_tiles = {"modname_tilename.png"},`
     collision_box = {
       type = "fixed",
       fixed = {
@@ -1476,6 +1480,9 @@ Item metadata only contains a key-value store.
 Some of the values in the key-value store are handled specially:
 
 * `description`: Set the itemstack's description. Defaults to idef.description
+* `color`: A `ColorString`, which sets the stack's color.
+* `palette_index`: If the item has a palette, this is used to get the
+                  current color from the palette.
 
 Example stuff:
 
@@ -1872,6 +1879,12 @@ The following functions provide escape sequences:
     * `color` is a ColorString
     * The escape sequence sets the background of the whole text element to
       `color`. Only defined for item descriptions and tooltips.
+* `color.strip_foreground_colors(str)`
+    * Removes foreground colors added by `get_color_escape_sequence`.
+* `color.strip_background_colors(str)`
+    * Removes background colors added by `get_background_escape_sequence`.
+* `color.strip_colors(str)`
+    * Removes all color escape sequences.
 
 Spatial Vectors
 ---------------
@@ -1929,6 +1942,8 @@ Helper functions
     * returns time with microsecond precision. May not return wall time.
 * `table.copy(table)`: returns a table
     * returns a deep copy of `table`
+* `minetest.pointed_thing_to_face_pos(placer, pointed_thing)`: returns a position
+    * returns the exact position on the surface of a pointed node
 
 `minetest` namespace reference
 ------------------------------
@@ -2697,7 +2712,7 @@ These functions return the leftover itemstack.
 * `minetest.write_json(data[, styled])`: returns a string or `nil` and an error message
     * Convert a Lua table into a JSON string
     * styled: Outputs in a human-readable format if this is set, defaults to false
-    * Unserializable things like functions and userdata are saved as null.
+    * Unserializable things like functions and userdata will cause an error.
     * **Warning**: JSON is more strict than the Lua table format.
         1. You can only use strings and positive integers of at least one as keys.
         2. You can not mix string and integer keys.
@@ -2843,6 +2858,8 @@ See `StorageRef`, `NodeMetaRef` and `ItemStackMetaRef`.
     * Any non-table value will clear the metadata
     * See "Node Metadata" for an example
     * returns `true` on success
+* `equals(other)`
+    * returns `true` if this metadata has the same key-value pairs as `other`
 
 ### `NodeMetaRef`
 Node metadata: reference extra data and functionality stored in a node.
@@ -3723,6 +3740,19 @@ Definition tables
                             {hard = 1, metal = 1, spikes = 1}
         inventory_image = "default_tool_steelaxe.png",
         wield_image = "",
+        palette = "",
+        --[[
+        ^ An image file containing the palette of a node.
+        ^ You can set the currently used color as the
+        ^ "palette_index" field of the item stack metadata.
+        ^ The palette is always stretched to fit indices
+        ^ between 0 and 255, to ensure compatibility with
+        ^ "colorfacedir" and "colorwallmounted" nodes.
+        ]]
+        color = "0xFFFFFFFF",
+        --[[
+        ^ The color of the item. The palette overrides this.
+        ]]
         wield_scale = {x = 1, y = 1, z = 1},
         stack_max = 99,
         range = 4.0,
@@ -3841,9 +3871,10 @@ Definition tables
 
         drawtype = "normal", -- See "Node drawtypes"
         visual_scale = 1.0, --[[
-        ^ Supported for drawtypes "plantlike", "signlike", "torchlike", "mesh".
-        ^ For plantlike, the image will start at the bottom of the node; for the
-        ^ other drawtypes, the image will be centered on the node.
+        ^ Supported for drawtypes "plantlike", "signlike", "torchlike",
+        ^ "firelike", "mesh".
+        ^ For plantlike and firelike, the image will start at the bottom of the
+        ^ node, for the other drawtypes the image will be centered on the node.
         ^ Note that positioning for "torchlike" may still change. ]]
         tiles = {tile definition 1, def2, def3, def4, def5, def6}, --[[
         ^ Textures of node; +Y, -Y, +X, -X, +Z, -Z (old field name: tile_images)

@@ -49,7 +49,6 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type: Debug or Release" FORCE)
 endif()
 
-
 # Included stuff
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -187,6 +186,10 @@ if(APPLE)
 	install(FILES "misc/Info.plist" DESTINATION "${BUNDLE_PATH}/Contents")
 endif()
 
+# Library pack
+find_package(GMP REQUIRED)
+find_package(Json REQUIRED)
+find_package(Lua REQUIRED)
 
 # Subdirectories
 # Be sure to add all relevant definitions above this

@@ -38,6 +38,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_sound", "true");
 	settings->setDefault("sound_volume", "0.8");
 	settings->setDefault("enable_mesh_cache", "false");
+	settings->setDefault("mesh_generation_interval", "0");
 	settings->setDefault("enable_vbo", "true");
 	settings->setDefault("free_move", "false");
 	settings->setDefault("fast_move", "false");
@@ -71,6 +72,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_special1", "KEY_KEY_E");
 	settings->setDefault("keymap_chat", "KEY_KEY_T");
 	settings->setDefault("keymap_cmd", "/");
+	settings->setDefault("keymap_cmd_local", ".");
 	settings->setDefault("keymap_minimap", "KEY_F9");
 	settings->setDefault("keymap_console", "KEY_F10");
 	settings->setDefault("keymap_rangeselect", "KEY_KEY_R");
@@ -106,6 +108,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("show_debug", "true");
 #endif
 	settings->setDefault("fsaa", "0");
+	settings->setDefault("undersampling", "0");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fog_start", "0.4");
 	settings->setDefault("3d_mode", "none");
@@ -201,6 +204,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("always_fly_fast", "true");
 	settings->setDefault("continuous_forward", "false");
 	settings->setDefault("enable_joysticks", "false");
+	settings->setDefault("joystick_id", "0");
+	settings->setDefault("joystick_type", "");
 	settings->setDefault("repeat_joystick_button_time", "0.17");
 	settings->setDefault("joystick_frustum_sensitivity", "170");
 
@@ -259,7 +264,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("creative_mode", "false");
 	settings->setDefault("show_statusline_on_connect", "true");
 	settings->setDefault("enable_damage", "true");
-	settings->setDefault("give_initial_stuff", "false");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
 	settings->setDefault("enable_pvp", "true");
@@ -331,10 +335,10 @@ void set_default_settings(Settings *settings)
 	// Mapgen
 	settings->setDefault("mg_name", "v7");
 	settings->setDefault("water_level", "1");
+	settings->setDefault("mapgen_limit", "31000");
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "dungeons");
 	settings->setDefault("fixed_map_seed", "");
-	settings->setDefault("map_generation_limit", "31000");
 	settings->setDefault("max_block_generate_distance", "7");
 	settings->setDefault("enable_mapgen_debug_info", "false");
 
@@ -346,6 +350,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("server_description", "");
 
 	settings->setDefault("high_precision_fpu", "true");
+	settings->setDefault("enable_console", "false");
 
 #ifdef __ANDROID__
 	settings->setDefault("screenW", "0");

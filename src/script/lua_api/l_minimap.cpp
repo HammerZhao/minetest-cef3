@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "minimap.h"
+#include "settings.h"
 
 LuaMinimap::LuaMinimap(Minimap *m)
 {
@@ -118,21 +119,35 @@ int LuaMinimap::l_toggle_shape(lua_State *L)
 
 int LuaMinimap::l_show(lua_State *L)
 {
+	// If minimap is disabled by config, don't show it.
+	if (!g_settings->getBool("enable_minimap"))
+		return 1;
+
+	Client *client = getClient(L);
+	assert(client);
+
 	LuaMinimap *ref = checkobject(L, 1);
 	Minimap *m = getobject(ref);
 
 	if (m->getMinimapMode() == MINIMAP_MODE_OFF)
 		m->setMinimapMode(MINIMAP_MODE_SURFACEx1);
+
+	client->showMinimap(true);
 	return 1;
 }
 
 int LuaMinimap::l_hide(lua_State *L)
 {
+	Client *client = getClient(L);
+	assert(client);
+
 	LuaMinimap *ref = checkobject(L, 1);
 	Minimap *m = getobject(ref);
 
 	if (m->getMinimapMode() != MINIMAP_MODE_OFF)
 		m->setMinimapMode(MINIMAP_MODE_OFF);
+
+	client->showMinimap(false);
 	return 1;
 }
 
@@ -186,7 +201,7 @@ void LuaMinimap::Register(lua_State *L)
 }
 
 const char LuaMinimap::className[] = "Minimap";
-const luaL_reg LuaMinimap::methods[] = {
+const luaL_Reg LuaMinimap::methods[] = {
 	luamethod(LuaMinimap, show),
 	luamethod(LuaMinimap, hide),
 	luamethod(LuaMinimap, get_pos),

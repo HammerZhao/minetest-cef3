@@ -470,56 +470,42 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
-	if(protocol_version >= 14)
-	{
-		writeU8(os, 1); // version
-		os<<serializeString(""); // name
-		writeU8(os, 0); // is_player
-		writeS16(os, getId()); //id
-		writeV3F1000(os, m_base_position);
-		writeF1000(os, m_yaw);
-		writeS16(os, m_hp);
+	// protocol >= 14
+	writeU8(os, 1); // version
+	os << serializeString(""); // name
+	writeU8(os, 0); // is_player
+	writeS16(os, getId()); //id
+	writeV3F1000(os, m_base_position);
+	writeF1000(os, m_yaw);
+	writeS16(os, m_hp);
 
-		std::ostringstream msg_os(std::ios::binary);
-		msg_os << serializeLongString(getPropertyPacket()); // message 1
-		msg_os << serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
-		msg_os << serializeLongString(gob_cmd_update_animation(
-			m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop)); // 3
-		for (UNORDERED_MAP<std::string, core::vector2d<v3f> >::const_iterator
-				ii = m_bone_position.begin(); ii != m_bone_position.end(); ++ii) {
-			msg_os << serializeLongString(gob_cmd_update_bone_position((*ii).first,
-					(*ii).second.X, (*ii).second.Y)); // m_bone_position.size
-		}
-		msg_os << serializeLongString(gob_cmd_update_attachment(m_attachment_parent_id,
-			m_attachment_bone, m_attachment_position, m_attachment_rotation)); // 4
-		int message_count = 4 + m_bone_position.size();
-		for (UNORDERED_SET<int>::const_iterator ii = m_attachment_child_ids.begin();
-				(ii != m_attachment_child_ids.end()); ++ii) {
-			if (ServerActiveObject *obj = m_env->getActiveObject(*ii)) {
-				message_count++;
-				msg_os << serializeLongString(gob_cmd_update_infant(*ii, obj->getSendType(),
-					obj->getClientInitializationData(protocol_version)));
-			}
-		}
-
-		msg_os << serializeLongString(gob_cmd_set_texture_mod(m_current_texture_modifier));
-		message_count++;
-
-		writeU8(os, message_count);
-		os.write(msg_os.str().c_str(), msg_os.str().size());
+	std::ostringstream msg_os(std::ios::binary);
+	msg_os << serializeLongString(getPropertyPacket()); // message 1
+	msg_os << serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
+	msg_os << serializeLongString(gob_cmd_update_animation(
+		m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop)); // 3
+	for (UNORDERED_MAP<std::string, core::vector2d<v3f> >::const_iterator
+			ii = m_bone_position.begin(); ii != m_bone_position.end(); ++ii) {
+		msg_os << serializeLongString(gob_cmd_update_bone_position((*ii).first,
+				(*ii).second.X, (*ii).second.Y)); // m_bone_position.size
 	}
-	else
-	{
-		writeU8(os, 0); // version
-		os<<serializeString(""); // name
-		writeU8(os, 0); // is_player
-		writeV3F1000(os, m_base_position);
-		writeF1000(os, m_yaw);
-		writeS16(os, m_hp);
-		writeU8(os, 2); // number of messages stuffed in here
-		os<<serializeLongString(getPropertyPacket()); // message 1
-		os<<serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
+	msg_os << serializeLongString(gob_cmd_update_attachment(m_attachment_parent_id,
+		m_attachment_bone, m_attachment_position, m_attachment_rotation)); // 4
+	int message_count = 4 + m_bone_position.size();
+	for (UNORDERED_SET<int>::const_iterator ii = m_attachment_child_ids.begin();
+			(ii != m_attachment_child_ids.end()); ++ii) {
+		if (ServerActiveObject *obj = m_env->getActiveObject(*ii)) {
+			message_count++;
+			msg_os << serializeLongString(gob_cmd_update_infant(*ii, obj->getSendType(),
+				obj->getClientInitializationData(protocol_version)));
+		}
 	}
+
+	msg_os << serializeLongString(gob_cmd_set_texture_mod(m_current_texture_modifier));
+	message_count++;
+
+	writeU8(os, message_count);
+	os.write(msg_os.str().c_str(), msg_os.str().size());
 
 	// return result
 	return os.str();
@@ -877,58 +863,44 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
-	if(protocol_version >= 15)
-	{
-		writeU8(os, 1); // version
-		os<<serializeString(m_player->getName()); // name
-		writeU8(os, 1); // is_player
-		writeS16(os, getId()); //id
-		writeV3F1000(os, m_base_position + v3f(0,BS*1,0));
-		writeF1000(os, m_yaw);
-		writeS16(os, getHP());
+	// Protocol >= 15
+	writeU8(os, 1); // version
+	os << serializeString(m_player->getName()); // name
+	writeU8(os, 1); // is_player
+	writeS16(os, getId()); //id
+	writeV3F1000(os, m_base_position + v3f(0,BS*1,0));
+	writeF1000(os, m_yaw);
+	writeS16(os, getHP());
 
-		std::ostringstream msg_os(std::ios::binary);
-		msg_os << serializeLongString(getPropertyPacket()); // message 1
-		msg_os << serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
-		msg_os << serializeLongString(gob_cmd_update_animation(
-			m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop)); // 3
-		for (UNORDERED_MAP<std::string, core::vector2d<v3f> >::const_iterator
-				ii = m_bone_position.begin(); ii != m_bone_position.end(); ++ii) {
-			msg_os << serializeLongString(gob_cmd_update_bone_position((*ii).first,
-				(*ii).second.X, (*ii).second.Y)); // m_bone_position.size
+	std::ostringstream msg_os(std::ios::binary);
+	msg_os << serializeLongString(getPropertyPacket()); // message 1
+	msg_os << serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
+	msg_os << serializeLongString(gob_cmd_update_animation(
+		m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop)); // 3
+	for (UNORDERED_MAP<std::string, core::vector2d<v3f> >::const_iterator
+			ii = m_bone_position.begin(); ii != m_bone_position.end(); ++ii) {
+		msg_os << serializeLongString(gob_cmd_update_bone_position((*ii).first,
+			(*ii).second.X, (*ii).second.Y)); // m_bone_position.size
+	}
+	msg_os << serializeLongString(gob_cmd_update_attachment(m_attachment_parent_id,
+		m_attachment_bone, m_attachment_position, m_attachment_rotation)); // 4
+	msg_os << serializeLongString(gob_cmd_update_physics_override(m_physics_override_speed,
+			m_physics_override_jump, m_physics_override_gravity, m_physics_override_sneak,
+			m_physics_override_sneak_glitch)); // 5
+	// (GENERIC_CMD_UPDATE_NAMETAG_ATTRIBUTES) : Deprecated, for backwards compatibility only.
+	msg_os << serializeLongString(gob_cmd_update_nametag_attributes(m_prop.nametag_color)); // 6
+	int message_count = 6 + m_bone_position.size();
+	for (UNORDERED_SET<int>::const_iterator ii = m_attachment_child_ids.begin();
+			ii != m_attachment_child_ids.end(); ++ii) {
+		if (ServerActiveObject *obj = m_env->getActiveObject(*ii)) {
+			message_count++;
+			msg_os << serializeLongString(gob_cmd_update_infant(*ii, obj->getSendType(),
+				obj->getClientInitializationData(protocol_version)));
 		}
-		msg_os << serializeLongString(gob_cmd_update_attachment(m_attachment_parent_id,
-			m_attachment_bone, m_attachment_position, m_attachment_rotation)); // 4
-		msg_os << serializeLongString(gob_cmd_update_physics_override(m_physics_override_speed,
-				m_physics_override_jump, m_physics_override_gravity, m_physics_override_sneak,
-				m_physics_override_sneak_glitch)); // 5
-		// (GENERIC_CMD_UPDATE_NAMETAG_ATTRIBUTES) : Deprecated, for backwards compatibility only.
-		msg_os << serializeLongString(gob_cmd_update_nametag_attributes(m_prop.nametag_color)); // 6
-		int message_count = 6 + m_bone_position.size();
-		for (UNORDERED_SET<int>::const_iterator ii = m_attachment_child_ids.begin();
-				ii != m_attachment_child_ids.end(); ++ii) {
-			if (ServerActiveObject *obj = m_env->getActiveObject(*ii)) {
-				message_count++;
-				msg_os << serializeLongString(gob_cmd_update_infant(*ii, obj->getSendType(),
-					obj->getClientInitializationData(protocol_version)));
-			}
-		}
+	}
 
-		writeU8(os, message_count);
-		os.write(msg_os.str().c_str(), msg_os.str().size());
-	}
-	else
-	{
-		writeU8(os, 0); // version
-		os<<serializeString(m_player->getName()); // name
-		writeU8(os, 1); // is_player
-		writeV3F1000(os, m_base_position + v3f(0,BS*1,0));
-		writeF1000(os, m_yaw);
-		writeS16(os, getHP());
-		writeU8(os, 2); // number of messages stuffed in here
-		os<<serializeLongString(getPropertyPacket()); // message 1
-		os<<serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
-	}
+	writeU8(os, message_count);
+	os.write(msg_os.str().c_str(), msg_os.str().size());
 
 	// return result
 	return os.str();
@@ -947,8 +919,8 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		MapNode n = m_env->getMap().getNodeNoEx(p);
 		const ContentFeatures &c = m_env->getGameDef()->ndef()->get(n);
 		// If node generates drown
-		if (c.drowning > 0) {
-			if (m_hp > 0 && m_breath > 0)
+		if (c.drowning > 0 && m_hp > 0) {
+			if (m_breath > 0)
 				setBreath(m_breath - 1);
 
 			// No more breath, damage player
@@ -1305,6 +1277,16 @@ ItemStack PlayerSAO::getWieldedItem() const
 	const InventoryList *mlist = inv->getList(getWieldList());
 	if (mlist && getWieldIndex() < (s32)mlist->getSize())
 		ret = mlist->getItem(getWieldIndex());
+	return ret;
+}
+
+ItemStack PlayerSAO::getWieldedItemOrHand() const
+{
+	const Inventory *inv = getInventory();
+	ItemStack ret;
+	const InventoryList *mlist = inv->getList(getWieldList());
+	if (mlist && getWieldIndex() < (s32)mlist->getSize())
+		ret = mlist->getItem(getWieldIndex());
 	if (ret.name.empty()) {
 		const InventoryList *hlist = inv->getList("hand");
 		if (hlist)
@@ -1319,14 +1301,6 @@ bool PlayerSAO::setWieldedItem(const ItemStack &item)
 	if (inv) {
 		InventoryList *mlist = inv->getList(getWieldList());
 		if (mlist) {
-			ItemStack olditem = mlist->getItem(getWieldIndex());
-			if (olditem.name.empty()) {
-				InventoryList *hlist = inv->getList("hand");
-				if (hlist) {
-					hlist->changeItem(0, item);
-					return true;
-				}
-			}
 			mlist->changeItem(getWieldIndex(), item);
 			return true;
 		}

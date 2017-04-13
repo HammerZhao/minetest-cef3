@@ -614,20 +614,6 @@ void Server::handleCommand_Init2(NetworkPacket* pkt)
 	u16 protocol_version = m_clients.getProtocolVersion(pkt->getPeerId());
 
 
-	///// begin compatibility code
-	PlayerSAO* playersao = NULL;
-	if (protocol_version <= 22) {
-		playersao = StageTwoClientInit(pkt->getPeerId());
-
-		if (playersao == NULL) {
-			actionstream
-				<< "TOSERVER_INIT2 stage 2 client init failed for peer "
-				<< pkt->getPeerId() << std::endl;
-			return;
-		}
-	}
-	///// end compatibility code
-
 	/*
 		Send some initialization data
 	*/
@@ -656,13 +642,6 @@ void Server::handleCommand_Init2(NetworkPacket* pkt)
 	u16 time = m_env->getTimeOfDay();
 	float time_speed = g_settings->getFloat("time_speed");
 	SendTimeOfDay(pkt->getPeerId(), time, time_speed);
-
-	///// begin compatibility code
-	if (protocol_version <= 22) {
-		m_clients.event(pkt->getPeerId(), CSE_SetClientReady);
-		m_script->on_joinplayer(playersao);
-	}
-	///// end compatibility code
 
 	// Warnings about protocol version can be issued here
 	if (getClient(pkt->getPeerId())->net_proto_version < LATEST_PROTOCOL_VERSION) {
@@ -1128,6 +1107,13 @@ void Server::handleCommand_Damage(NetworkPacket* pkt)
 	}
 
 	if (g_settings->getBool("enable_damage")) {
+		if (playersao->isDead()) {
+			verbosestream << "Server::ProcessData(): Info: "
+				"Ignoring damage as player " << player->getName()
+				<< " is already dead." << std::endl;
+			return;
+		}
+
 		actionstream << player->getName() << " damaged by "
 				<< (int)damage << " hp at " << PP(playersao->getBasePosition() / BS)
 				<< std::endl;
@@ -1396,7 +1382,10 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 		const ItemDefinition &playeritem_def =
 			playersao->getWieldedItem().getDefinition(m_itemdef);
 		float max_d = BS * playeritem_def.range;
-		float max_d_hand = BS * m_itemdef->get("").range;
+		InventoryList *hlist = playersao->getInventory()->getList("hand");
+		const ItemDefinition &hand_def =
+			hlist ? (hlist->getItem(0).getDefinition(m_itemdef)) : (m_itemdef->get(""));
+		float max_d_hand = BS * hand_def.range;
 		if (max_d < 0 && max_d_hand >= 0)
 			max_d = max_d_hand;
 		else if (max_d < 0)
@@ -1457,7 +1446,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 					<<pointed.object_id<<": "
 					<<pointed_object->getDescription()<<std::endl;
 
-			ItemStack punchitem = playersao->getWieldedItem();
+			ItemStack punchitem = playersao->getWieldedItemOrHand();
 			ToolCapabilities toolcap =
 					punchitem.getToolCapabilities(m_itemdef);
 			v3f dir = (pointed_object->getBasePosition() -
@@ -1524,7 +1513,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 					m_script->on_cheat(playersao, "finished_unknown_dig");
 				}
 				// Get player's wielded item
-				ItemStack playeritem = playersao->getWieldedItem();
+				ItemStack playeritem = playersao->getWieldedItemOrHand();
 				ToolCapabilities playeritem_toolcap =
 						playeritem.getToolCapabilities(m_itemdef);
 				// Get diggability and expected digging time
@@ -1532,7 +1521,9 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 						&playeritem_toolcap);
 				// If can't dig, try hand
 				if (!params.diggable) {
-					const ItemDefinition &hand = m_itemdef->get("");
+					InventoryList *hlist = playersao->getInventory()->getList("hand");
+					const ItemDefinition &hand =
+						hlist ? hlist->getItem(0).getDefinition(m_itemdef) : m_itemdef->get("");
 					const ToolCapabilities *tp = hand.tool_capabilities;
 					if (tp)
 						params = getDigParams(m_nodedef->get(n).groups, tp);

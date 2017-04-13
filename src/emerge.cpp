@@ -174,6 +174,9 @@ bool EmergeManager::initMapgens(MapgenParams *params)
 
 Mapgen *EmergeManager::getCurrentMapgen()
 {
+	if (!m_threads_active)
+		return NULL;
+
 	for (u32 i = 0; i != m_threads.size(); i++) {
 		if (m_threads[i]->isCurrentThread())
 			return m_threads[i]->m_mapgen;
@@ -603,7 +606,7 @@ void *EmergeThread::run()
 			continue;
 		}
 
-		if (blockpos_over_limit(pos))
+		if (blockpos_over_max_limit(pos))
 			continue;
 
 		bool allow_gen = bedata.flags & BLOCK_EMERGE_ALLOW_GEN;

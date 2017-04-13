@@ -197,16 +197,17 @@ assert(table.indexof({"foo", "bar"}, "foo") == 1)
 assert(table.indexof({"foo", "bar"}, "baz") == -1)
 
 --------------------------------------------------------------------------------
-function file_exists(filename)
-	local f = io.open(filename, "r")
-	if f == nil then
-		return false
-	else
-		f:close()
-		return true
+if INIT ~= "client" then
+	function file_exists(filename)
+		local f = io.open(filename, "r")
+		if f == nil then
+			return false
+		else
+			f:close()
+			return true
+		end
 	end
 end
-
 --------------------------------------------------------------------------------
 function string:trim()
 	return (self:gsub("^%s*(.-)%s*$", "%1"))
@@ -639,6 +640,8 @@ if INIT == "client" or INIT == "mainmenu" then
 	end
 end
 
+local ESCAPE_CHAR = string.char(0x1b)
+
 -- Client-sided mods don't have access to getbool
 if core.setting_getbool and core.setting_getbool("disable_escape_sequences") then
 
@@ -656,7 +659,6 @@ if core.setting_getbool and core.setting_getbool("disable_escape_sequences") the
 
 else
 
-	local ESCAPE_CHAR = string.char(0x1b)
 	function core.get_color_escape_sequence(color)
 		return ESCAPE_CHAR .. "(c@" .. color .. ")"
 	end
@@ -666,7 +668,58 @@ else
 	end
 
 	function core.colorize(color, message)
-		return core.get_color_escape_sequence(color) .. message .. core.get_color_escape_sequence("#ffffff")
+		local lines = tostring(message):split("\n", true)
+		local color_code = core.get_color_escape_sequence(color)
+
+		for i, line in ipairs(lines) do
+			lines[i] = color_code .. line
+		end
+
+		return table.concat(lines, "\n") .. core.get_color_escape_sequence("#ffffff")
 	end
 
 end
+
+function core.strip_foreground_colors(str)
+	return (str:gsub(ESCAPE_CHAR .. "%(c@[^)]+%)", ""))
+end
+
+function core.strip_background_colors(str)
+	return (str:gsub(ESCAPE_CHAR .. "%(b@[^)]+%)", ""))
+end
+
+function core.strip_colors(str)
+	return (str:gsub(ESCAPE_CHAR .. "%([bc]@[^)]+%)", ""))
+end
+
+--------------------------------------------------------------------------------
+-- Returns the exact coordinate of a pointed surface
+--------------------------------------------------------------------------------
+function core.pointed_thing_to_face_pos(placer, pointed_thing)
+	local eye_offset_first = placer:get_eye_offset()
+	local node_pos = pointed_thing.under
+	local camera_pos = placer:get_pos()
+	local pos_off = vector.multiply(
+			vector.subtract(pointed_thing.above, node_pos), 0.5)
+	local look_dir = placer:get_look_dir()
+	local offset, nc
+	local oc = {}
+
+	for c, v in pairs(pos_off) do
+		if v == 0 then
+			oc[#oc + 1] = c
+		else
+			offset = v
+			nc = c
+		end
+	end
+	local fine_pos = {[nc] = node_pos[nc] + offset}
+	camera_pos.y = camera_pos.y + 1.625 + eye_offset_first.y / 10
+	local f = (node_pos[nc] + offset - camera_pos[nc]) / look_dir[nc]
+
+	for i = 1, #oc do
+		fine_pos[oc[i]] = camera_pos[oc[i]] + look_dir[oc[i]] * f
+	end
+	return fine_pos
+end
+

@@ -234,6 +234,8 @@ int LuaItemStack::l_to_table(lua_State *L)
 		for (StringMap::const_iterator it = fields.begin();
 				it != fields.end(); ++it) {
 			const std::string &name = it->first;
+			if (name.empty())
+				continue;
 			const std::string &value = it->second;
 			lua_pushlstring(L, name.c_str(), name.size());
 			lua_pushlstring(L, value.c_str(), value.size());
@@ -462,7 +464,7 @@ void LuaItemStack::Register(lua_State *L)
 }
 
 const char LuaItemStack::className[] = "ItemStack";
-const luaL_reg LuaItemStack::methods[] = {
+const luaL_Reg LuaItemStack::methods[] = {
 	luamethod(LuaItemStack, is_empty),
 	luamethod(LuaItemStack, get_name),
 	luamethod(LuaItemStack, set_name),
