@@ -423,7 +423,7 @@ MinetestCefRenderHandler::MinetestCefRenderHandler(video::IVideoDriver *driver,
 	, m_texture(texture)
 	, m_width(width)
 	, m_height(height)
-{;}
+{}
 
 MinetestCefRenderHandler::MinetestCefRenderHandler(video::IVideoDriver *driver,
         video::IImage *image, int width, int height)
@@ -431,7 +431,7 @@ MinetestCefRenderHandler::MinetestCefRenderHandler(video::IVideoDriver *driver,
 	, m_image(image)
 	, m_width(width)
 	, m_height(height)
-{;}
+{}
 
 void MinetestCefRenderHandler::SetSize(int width, int height)
 {
@@ -448,7 +448,7 @@ bool MinetestCefRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser, CefRec
 void MinetestCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height)
 {
 /*
- * x = 1 y = 1, w = 4, h =
+ * x = 1 y = 1, w = 4, h = 2
  * Width
  * 00000000
  * 01111100
@@ -469,48 +469,47 @@ void MinetestCefRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser, PaintEleme
 
 	std::vector<int>::size_type sz = dirtyRects.size();
 
-	if (m_texture != NULL)
-	{
-		irr::u8* data = (irr::u8*) m_texture->lock();
-		for (unsigned i = 0; i < sz; i++) {
-			CefRect rect = dirtyRects[i];
-			if (rect.x == 0 && rect.y == 0 && width == rect.width && height == rect.height) {
-				memcpy(data, buffer, width * height * 4);
-			} else {
-				// These calculations are critical. Do NOT make a mistake here or you WILL
-				// overwrite memory in use by other parts of the game, causing RANDOM
-				// crashes that seem totally UNRELATED to the below code
-				unsigned yoffset = rect.y * width * 4;
-				unsigned xoffset = rect.x * 4;
-				unsigned skip = (width - rect.width) * 4;
-				unsigned curpos = yoffset + xoffset;
-				for (int j = 0; j < rect.height; j++) {
-					// Danger, Will Robinson!
-					memcpy(((uint8_t*)data) + curpos, ((uint8_t*)buffer) + curpos, rect.width * 4);
-					curpos = curpos + (rect.width * 4) + skip;
-				}
-			}
-		}
-		m_texture->unlock();
+	irr::u8* data;
+
+	if (m_texture != NULL) {
+		data = (irr::u8*) m_texture->lock();
+	} else if (m_image != NULL) {
+		data = (irr::u8*) m_image->lock();
+	} else {
+		return;
 	}
 
-/*	if (m_texture != NULL)
-	{
-		irr::u8* data = (irr::u8*) m_texture->lock();
-		memcpy(data, buffer, width * height * 4);
-		m_texture->unlock();
+	for (unsigned i = 0; i < sz; i++) {
+		CefRect rect = dirtyRects[i];
+		if (rect.x == 0 && rect.y == 0 && width == rect.width && height == rect.height) {
+			memcpy(data, buffer, width * height * 4);
+		} else {
+			// These calculations are critical. Do NOT make a mistake here or you WILL
+			// overwrite memory in use by other parts of the game, causing RANDOM
+			// crashes that seem totally UNRELATED to the below code
+			unsigned yoffset = rect.y * width * 4;
+			unsigned xoffset = rect.x * 4;
+			unsigned skip = (width - rect.width) * 4;
+			unsigned curpos = yoffset + xoffset;
+			for (int j = 0; j < rect.height; j++) {
+				// Danger, Will Robinson!
+				memcpy(((uint8_t*)data) + curpos, ((uint8_t*)buffer) + curpos, rect.width * 4);
+				curpos = curpos + (rect.width * 4) + skip;
+			}
+		}
 	}
-	else if (m_image != NULL)
-	{
-		irr::u8* data = (irr::u8*) m_image->lock();
-		memcpy(data, buffer, width * height * 4);
+
+	if (m_texture != NULL) {
+		m_texture->unlock();
+	} else if (m_image != NULL) {
 		m_image->unlock();
-	}*/
+	}
+
 }
 
 MinetestCefClient::MinetestCefClient(MinetestCefRenderHandler *renderHandler)
 	: m_renderHandler(renderHandler)
-{;}
+{}
 
 CefRefPtr<CefRenderHandler> MinetestCefClient::GetRenderHandler()
 {
