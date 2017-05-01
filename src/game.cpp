@@ -2909,7 +2909,7 @@ void Game::toggleFullViewRange()
 
 	draw_control->range_all = !draw_control->range_all;
 	infostream << infostreammsg[draw_control->range_all] << std::endl;
-	statustext = msg[draw_control->range_all];
+	m_statustext = msg[draw_control->range_all];
 	runData.statustext_time = 0;
 }
 
