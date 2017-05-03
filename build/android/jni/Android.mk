@@ -134,6 +134,7 @@ LOCAL_SRC_FILES := \
 		jni/src/convert_json.cpp                  \
 		jni/src/craftdef.cpp                      \
 		jni/src/database-dummy.cpp                \
+		jni/src/database-files.cpp                \
 		jni/src/database-sqlite3.cpp              \
 		jni/src/database.cpp                      \
 		jni/src/debug.cpp                         \
@@ -185,6 +186,7 @@ LOCAL_SRC_FILES := \
 		jni/src/mapnode.cpp                       \
 		jni/src/mapsector.cpp                     \
 		jni/src/mesh.cpp                          \
+		jni/src/mesh_generator_thread.cpp         \
 		jni/src/metadata.cpp                      \
 		jni/src/mg_biome.cpp                      \
 		jni/src/mg_decoration.cpp                 \
@@ -309,6 +311,7 @@ LOCAL_SRC_FILES += \
 		jni/src/script/lua_api/l_inventory.cpp    \
 		jni/src/script/lua_api/l_item.cpp         \
 		jni/src/script/lua_api/l_itemstackmeta.cpp\
+		jni/src/script/lua_api/l_localplayer.cpp  \
 		jni/src/script/lua_api/l_mainmenu.cpp     \
 		jni/src/script/lua_api/l_mapgen.cpp       \
 		jni/src/script/lua_api/l_metadata.cpp     \
@@ -326,8 +329,8 @@ LOCAL_SRC_FILES += \
 		jni/src/script/lua_api/l_storage.cpp      \
 		jni/src/script/lua_api/l_util.cpp         \
 		jni/src/script/lua_api/l_vmanip.cpp       \
-		jni/src/script/clientscripting.cpp        \
-		jni/src/script/serverscripting.cpp        \
+		jni/src/script/scripting_client.cpp       \
+		jni/src/script/scripting_server.cpp       \
 		jni/src/script/scripting_mainmenu.cpp
 
 #freetype2 support

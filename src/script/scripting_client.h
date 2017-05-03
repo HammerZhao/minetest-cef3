@@ -1,6 +1,7 @@
 /*
 Minetest
-Copyright (C) 2017 Beerholder, Emiel van Rooijen <evrooije@outlook.com>
+Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -17,25 +18,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef L_CEF_H_
-#define L_CEF_H_
+#ifndef CLIENT_SCRIPTING_H_
+#define CLIENT_SCRIPTING_H_
 
-#include "lua_api/l_base.h"
-#include "config.h"
+#include "cpp_api/s_base.h"
+#include "cpp_api/s_client.h"
+#include "cpp_api/s_security.h"
+#include "util/basic_macros.h"
 
-class ModApiBrowser : public ModApiBase {
-private:
-	// create({name=})
-	static int l_create(lua_State *L);
-
-	// http_fetch_async_get(handle)
-	static int l_http_fetch_async_get(lua_State *L);
-
-	// request_http_api()
-	static int l_request_http_api(lua_State *L);
-
+class Client;
+class LocalPlayer;
+class ClientScripting:
+	virtual public ScriptApiBase,
+	public ScriptApiSecurity,
+	public ScriptApiClient
+{
 public:
-	static void Initialize(lua_State *L, int top);
-};
+	ClientScripting(Client *client);
+	void on_client_ready(LocalPlayer *localplayer);
 
-#endif /* L_CEF_H_ */
+private:
+	virtual void InitializeModApi(lua_State *L, int top);
+	DISABLE_CLASS_COPY(ClientScripting);
+};
+#endif

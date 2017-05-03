@@ -1230,10 +1230,9 @@ Another example: Make red wool from white wool and red dye:
        from destroyed nodes.
      * `0` is something that is directly accessible at the start of gameplay
      * There is no upper limit
-* `dig_immediate`: (player can always pick up node without tool wear)
-    * `2`: node is removed without tool wear after 0.5 seconds or so
-      (rail, sign)
-    * `3`: node is removed without tool wear immediately (torch)
+* `dig_immediate`: (player can always pick up node without reducing tool wear)
+    * `2`: the node always gets the digging time 0.5 seconds (rail, sign)
+    * `3`: the node always gets the digging time 0 seconds (torch)
 * `disable_jump`: Player (and possibly other things) cannot jump from node
 * `fall_damage_add_percent`: damage speed = `speed * (1 + value/100)`
 * `bouncy`: value is bounce speed in percent
@@ -1333,6 +1332,10 @@ For example, as a Lua table, `times={2=2.00, 3=0.70}`. This would
 result in the tool to be able to dig nodes that have a rating of `2` or `3`
 for this group, and unable to dig the rating `1`, which is the toughest.
 Unless there is a matching group that enables digging otherwise.
+
+If the result digging time is 0, a delay of 0.15 seconds is added between
+digging nodes; If the player releases LMB after digging, this delay is set to 0,
+i.e. players can more quickly click the nodes away instead of holding LMB.
 
 #### Damage groups
 List of damage for groups of entities. See "Entity damage mechanism".
@@ -1581,7 +1584,7 @@ examples.
 * Sets default background color of tooltips
 * Sets default font color of tooltips
 
-#### `tooltip[<gui_element_name>;<tooltip_text>;<bgcolor>,<fontcolor>]`
+#### `tooltip[<gui_element_name>;<tooltip_text>;<bgcolor>;<fontcolor>]`
 * Adds tooltip for an element
 * `<bgcolor>` tooltip background color as `ColorString` (optional)
 * `<fontcolor>` tooltip font color as `ColorString` (optional)
@@ -1920,8 +1923,7 @@ Helper functions
 * `math.sign(x, tolerance)`
     * Get the sign of a number.
       Optional: Also returns `0` when the absolute value is within the tolerance (default: `0`)
-* `string.split(str, separator=",", include_empty=false, max_splits=-1,
-* sep_is_pattern=false)`
+* `string.split(str, separator=",", include_empty=false, max_splits=-1, sep_is_pattern=false)`
     * If `max_splits` is negative, do not limit splits.
     * `sep_is_pattern` specifies if separator is a plain string or a pattern (regex).
     * e.g. `string:split("a,b", ",") == {"a","b"}`
@@ -1993,11 +1995,11 @@ Helper functions
             max_jitter = 0.5,          -- maximum packet time jitter
             avg_jitter = 0.03,         -- average packet time jitter
             connection_uptime = 200,   -- seconds since client connected
+            prot_vers = 31,            -- protocol version used by client
 
             -- following information is available on debug build only!!!
             -- DO NOT USE IN MODS
             --ser_vers = 26,             -- serialization version used by client
-            --prot_vers = 23,            -- protocol version used by client
             --major = 0,                 -- major version number
             --minor = 4,                 -- minor version number
             --patch = 10,                -- patch version number
@@ -2399,6 +2401,22 @@ and `minetest.auth_reload` call the authetification handler.
     * increase level of leveled node by level, default `level` equals `1`
     * if `totallevel > maxlevel`, returns rest (`total-max`)
     * can be negative for decreasing
+* `minetest.fix_light(pos1, pos2)`: returns `true`/`false`
+    * resets the light in a cuboid-shaped part of
+      the map and removes lighting bugs.
+    * Loads the area if it is not loaded.
+    * `pos1` is the corner of the cuboid with the least coordinates
+      (in node coordinates), inclusive.
+    * `pos2` is the opposite corner of the cuboid, inclusive.
+    * The actual updated cuboid might be larger than the specified one,
+      because only whole map blocks can be updated.
+      The actual updated area consists of those map blocks that intersect
+      with the given cuboid.
+    * However, the neighborhood of the updated area might change
+      as well, as light can spread out of the cuboid, also light
+      might be removed.
+    * returns `false` if the area is not fully generated,
+      `true` otherwise
 * `core.check_single_for_falling(pos)`
     * causes an unsupported `group:falling_node` node to fall and causes an
       unattached `group:attached_node` node to fall.
@@ -2576,10 +2594,16 @@ These functions return the leftover itemstack.
     * Optional: Variable number of arguments that are passed to `func`
 
 ### Server
-* `minetest.request_shutdown([message],[reconnect])`: request for server shutdown. Will display `message` to clients,
-    and `reconnect` == true displays a reconnect button.
+* `minetest.request_shutdown([message],[reconnect],[delay])`: request for server shutdown. Will display `message` to clients,
+    `reconnect` == true displays a reconnect button,
+    `delay` adds an optional delay (in seconds) before shutdown
+        negative delay cancels the current active shutdown
+        zero delay triggers an immediate shutdown.
+* `minetest.cancel_shutdown_requests()`: cancel current delayed shutdown
 * `minetest.get_server_status()`: returns server status string
 * `minetest.get_server_uptime()`: returns the server uptime in seconds
+* `minetest.remove_player(name)`: remove player from database (if he is not connected).
+    * Returns a code (0: successful, 1: no such player, 2: player is connected)
 
 ### Bans
 * `minetest.get_ban_list()`: returns the ban list (same as `minetest.get_ban_description("")`)
@@ -3017,7 +3041,11 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `jump`: multiplier to default jump value (default: `1`)
         * `gravity`: multiplier to default gravity value (default: `1`)
         * `sneak`: whether player can sneak (default: `true`)
-        * `sneak_glitch`: whether player can use the sneak glitch (default: `true`)
+        * `sneak_glitch`: whether player can use the new move code replications
+          of the old sneak side-effects: sneak ladders and 2 node sneak jump
+          (default: `false`)
+        * `new_move`: use new move/sneak code. When `false` the exact old code
+          is used for the specific old sneak behaviour (default: `true`)
 * `get_physics_override()`: returns the table given to set_physics_override
 * `hud_add(hud definition)`: add a HUD element described by HUD def, returns ID
    number on success
@@ -3049,6 +3077,15 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `"skybox"`: Uses 6 textures, `bgcolor` used
         * `"plain"`: Uses 0 textures, `bgcolor` used
 * `get_sky()`: returns bgcolor, type and a table with the textures
+* `set_clouds(parameters)`: set cloud parameters
+	* `parameters` is a table with the following optional fields:
+		* `density`: from `0` (no clouds) to `1` (full clouds) (default `0.4`)
+		* `color`: basic cloud color, with alpha channel (default `#fff0f0e5`)
+		* `ambient`: cloud color lower bound, use for a "glow at night" effect (default `#000000`)
+		* `height`: cloud height, i.e. y of cloud base (default per conf, usually `120`)
+		* `thickness`: cloud thickness in nodes (default `16`)
+		* `speed`: 2D cloud speed + direction in nodes per second (default `{x=0, y=-2}`)
+* `get_clouds()`: returns a table with the current cloud parameters as in `set_clouds`
 * `override_day_night_ratio(ratio or nil)`
     * `0`...`1`: Overrides day-night ratio, controlling sunlight to a specific amount
     * `nil`: Disables override, defaulting to sunlight based on day-night cycle
@@ -3414,8 +3451,14 @@ will place the schematic inside of the VoxelManip.
 * `read_from_map(p1, p2)`:  Loads a chunk of map into the VoxelManip object containing
   the region formed by `p1` and `p2`.
     * returns actual emerged `pmin`, actual emerged `pmax`
-* `write_to_map()`: Writes the data loaded from the `VoxelManip` back to the map.
+* `write_to_map([light])`: Writes the data loaded from the `VoxelManip` back to the map.
     * **important**: data must be set using `VoxelManip:set_data()` before calling this
+    * if `light` is true, then lighting is automatically recalculated.
+      The default value is true.
+      If `light` is false, no light calculations happen, and you should correct
+      all modified blocks with `minetest.fix_light()` as soon as possible.
+      Keep in mind that modifying the map where light is incorrect can cause
+      more lighting bugs.
 * `get_node_at(pos)`: Returns a `MapNode` table of the node currently loaded in
   the `VoxelManip` at that position
 * `set_node_at(pos, node)`: Sets a specific `MapNode` in the `VoxelManip` at that position
@@ -3879,6 +3922,12 @@ Definition tables
         tiles = {tile definition 1, def2, def3, def4, def5, def6}, --[[
         ^ Textures of node; +Y, -Y, +X, -X, +Z, -Z (old field name: tile_images)
         ^ List can be shortened to needed length ]]
+        overlay_tiles = {tile definition 1, def2, def3, def4, def5, def6}, --[[
+        ^ Same as `tiles`, but these textures are drawn on top of the
+        ^ base tiles. You can use this to colorize only specific parts of
+        ^ your texture. If the texture name is an empty string, that
+        ^ overlay is not drawn. Since such tiles are drawn twice, it
+        ^ is not recommended to use overlays on very common nodes.
         special_tiles = {tile definition 1, Tile definition 2}, --[[
         ^ Special textures of node; used rarely (old field name: special_materials)
         ^ List can be shortened to needed length ]]
@@ -3906,7 +3955,9 @@ Definition tables
         diggable = true, -- If false, can never be dug
         climbable = false, -- If true, can be climbed on (ladder)
         buildable_to = false, -- If true, placed nodes can replace this node
-        floodable = false, -- If true, liquids flow into and replace this node
+        floodable = false, --[[
+        ^ If true, liquids flow into and replace this node.
+        ^ Warning: making a liquid node 'floodable' does not work and may cause problems. ]]
         liquidtype = "none", -- "none"/"source"/"flowing"
         liquid_alternative_flowing = "", -- Flowing version of source liquid
         liquid_alternative_source = "", -- Source version of flowing liquid
@@ -3935,6 +3986,12 @@ Definition tables
         ^ If drawtype "nodebox" is used and selection_box is nil, then node_box is used. ]]
         legacy_facedir_simple = false, -- Support maps made in and before January 2012
         legacy_wallmounted = false, -- Support maps made in and before January 2012
+        waving = 0, --[[ valid for mesh, nodebox, plantlike, allfaces_optional nodes
+        ^ 1 - wave node like plants (top of node moves, bottom is fixed)
+        ^ 2 - wave node like leaves (whole node moves side-to-side synchronously)
+        ^ caveats: not all models will properly wave
+        ^ plantlike drawtype nodes can only wave like plants
+        ^ allfaces_optional drawtype nodes can only wave like leaves --]]
         sounds = {
             footstep = <SimpleSoundSpec>,
             dig = <SimpleSoundSpec>, -- "__group" = group-based sound (default)
@@ -3967,6 +4024,14 @@ Definition tables
         ^ Node destructor; called after removing node
         ^ Not called for bulk node placement (i.e. schematics and VoxelManip)
         ^ default: nil ]]
+        on_flood = func(pos, oldnode, newnode), --[[
+        ^ Called when a liquid (newnode) is about to flood oldnode, if
+        ^ it has `floodable = true` in the nodedef. Not called for bulk
+        ^ node placement (i.e. schematics and VoxelManip) or air nodes. If
+        ^ return true the node is not flooded, but on_flood callback will
+        ^ most likely be called over and over again every liquid update
+        ^ interval. Default: nil.
+        ^ Warning: making a liquid node 'floodable' does not work and may cause problems. ]]
 
         after_place_node = func(pos, placer, itemstack, pointed_thing) --[[
         ^ Called after constructing node when node was placed using

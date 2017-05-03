@@ -1,6 +1,6 @@
 /*
 Minetest
-Copyright (C) 2017 Beerholder, Emiel van Rooijen <evrooije@outlook.com>
+Copyright (C) 2017 bendeutsch, Ben Deutsch <ben@bendeutsch.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -17,17 +17,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "lua_api/l_internal.h"
-#include "common/c_converter.h"
-#include "common/c_content.h"
-#include "lua_api/l_cef.h"
-#include "mt_cef.h"
-#include "settings.h"
-#include "debug.h"
-#include "log.h"
+#ifndef CLOUDPARAMS_HEADER
+#define CLOUDPARAMS_HEADER
 
-int ModApiBrowser::l_create(lua_State *L)
+struct CloudParams
 {
-	return 1;
-}
+	float density;
+	video::SColor color_bright;
+	video::SColor color_ambient;
+	float thickness;
+	float height;
+	v2f speed;
+};
 
+#endif

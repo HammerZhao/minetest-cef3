@@ -105,7 +105,7 @@ private:
 	static int l_get_armor_groups(lua_State *L);
 
 	// set_physics_override(self, physics_override_speed, physics_override_jump,
-	//                      physics_override_gravity, sneak, sneak_glitch)
+	//                      physics_override_gravity, sneak, sneak_glitch, new_move)
 	static int l_set_physics_override(lua_State *L);
 
 	// get_physics_override(self)
@@ -288,6 +288,12 @@ private:
 
 	// get_sky(self, type, list)
 	static int l_get_sky(lua_State *L);
+
+	// set_clouds(self, {density=, color=, ambient=, height=, thickness=, speed=})
+	static int l_set_clouds(lua_State *L);
+
+	// get_clouds(self)
+	static int l_get_clouds(lua_State *L);
 
 	// override_day_night_ratio(self, type)
 	static int l_override_day_night_ratio(lua_State *L);

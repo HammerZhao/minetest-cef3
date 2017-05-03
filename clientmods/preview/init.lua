@@ -10,6 +10,13 @@ core.register_on_connect(function()
 	print("[PREVIEW] Player connection completed")
 end)
 
+core.register_on_placenode(function(pointed_thing, node)
+	print("The local player place a node!")
+	print("pointed_thing :" .. dump(pointed_thing))
+	print("node placed :" .. dump(node))
+	return false
+end)
+
 -- This is an example function to ensure it's working properly, should be removed before merge
 core.register_on_receiving_chat_messages(function(message)
 	print("[PREVIEW] Received message " .. message)
@@ -62,7 +69,7 @@ local function preview_minimap()
 	minimap:set_mode(4)
 	minimap:show()
 	minimap:set_pos({x=5, y=50, z=5})
-	minimap:toggle_shape()
+	minimap:set_shape(math.random(0, 1))
 
 	print("[PREVIEW] Minimap: mode => " .. dump(minimap:get_mode()) ..
 			" position => " .. dump(minimap:get_pos()) ..

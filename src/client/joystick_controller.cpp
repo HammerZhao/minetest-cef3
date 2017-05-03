@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "keys.h"
 #include "settings.h"
 #include "gettime.h"
+#include "porting.h"
 #include "../util/string.h"
 
 bool JoystickButtonCmb::isTriggered(const irr::SEvent::SJoystickEvent &ev) const
@@ -185,8 +186,9 @@ void JoystickController::onJoystickConnect(const std::vector<irr::SJoystickInfo>
 	m_joystick_id = id;
 }
 
-void JoystickController::setLayoutFromControllerName(std::string name) {
-	if (lowercase(name).find("xbox") >= 0) {
+void JoystickController::setLayoutFromControllerName(const std::string &name)
+{
+	if (lowercase(name).find("xbox") != std::string::npos) {
 		m_layout = create_xbox_layout();
 	} else {
 		m_layout = create_default_layout();
@@ -198,7 +200,7 @@ bool JoystickController::handleEvent(const irr::SEvent::SJoystickEvent &ev)
 	if (ev.Joystick != m_joystick_id)
 		return false;
 
-	m_internal_time = getTimeMs() / 1000.f;
+	m_internal_time = porting::getTimeMs() / 1000.f;
 
 	std::bitset<KeyType::INTERNAL_ENUM_COUNT> keys_pressed;
 

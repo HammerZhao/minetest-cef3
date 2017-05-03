@@ -42,7 +42,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
-#include "serverscripting.h"
+#include "scripting_server.h"
 #include "porting.h"
 #include "settings.h"
 #include "client.h"
@@ -259,7 +259,7 @@ std::vector<std::string>* GUIFormSpecMenu::getDropDownValues(const std::string &
 	return NULL;
 }
 
-void GUIFormSpecMenu::parseSize(parserData* data,std::string element)
+void GUIFormSpecMenu::parseSize(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,',');
 
@@ -285,7 +285,7 @@ void GUIFormSpecMenu::parseSize(parserData* data,std::string element)
 	errorstream<< "Invalid size element (" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseContainer(parserData* data, std::string element)
+void GUIFormSpecMenu::parseContainer(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element, ',');
 
@@ -311,7 +311,7 @@ void GUIFormSpecMenu::parseContainerEnd(parserData* data)
 	}
 }
 
-void GUIFormSpecMenu::parseList(parserData* data,std::string element)
+void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 {
 	if (m_client == 0) {
 		warningstream<<"invalid use of 'list' with m_client==0"<<std::endl;
@@ -366,7 +366,7 @@ void GUIFormSpecMenu::parseList(parserData* data,std::string element)
 	errorstream<< "Invalid list element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseListRing(parserData* data, std::string element)
+void GUIFormSpecMenu::parseListRing(parserData* data, const std::string &element)
 {
 	if (m_client == 0) {
 		errorstream << "WARNING: invalid use of 'listring' with m_client==0" << std::endl;
@@ -401,7 +401,7 @@ void GUIFormSpecMenu::parseListRing(parserData* data, std::string element)
 		<< m_inventorylists.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseCheckbox(parserData* data,std::string element)
+void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -457,7 +457,7 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data,std::string element)
 	errorstream<< "Invalid checkbox element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseScrollBar(parserData* data, std::string element)
+void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -516,7 +516,7 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, std::string element)
 	errorstream<< "Invalid scrollbar element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseImage(parserData* data,std::string element)
+void GUIFormSpecMenu::parseImage(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -560,7 +560,7 @@ void GUIFormSpecMenu::parseImage(parserData* data,std::string element)
 	errorstream<< "Invalid image element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseItemImage(parserData* data,std::string element)
+void GUIFormSpecMenu::parseItemImage(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -590,8 +590,8 @@ void GUIFormSpecMenu::parseItemImage(parserData* data,std::string element)
 	errorstream<< "Invalid ItemImage element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseButton(parserData* data,std::string element,
-		std::string type)
+void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
+		const std::string &type)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -645,7 +645,7 @@ void GUIFormSpecMenu::parseButton(parserData* data,std::string element,
 	errorstream<< "Invalid button element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseBackground(parserData* data,std::string element)
+void GUIFormSpecMenu::parseBackground(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -683,7 +683,7 @@ void GUIFormSpecMenu::parseBackground(parserData* data,std::string element)
 	errorstream<< "Invalid background element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseTableOptions(parserData* data,std::string element)
+void GUIFormSpecMenu::parseTableOptions(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -695,7 +695,7 @@ void GUIFormSpecMenu::parseTableOptions(parserData* data,std::string element)
 	}
 }
 
-void GUIFormSpecMenu::parseTableColumns(parserData* data,std::string element)
+void GUIFormSpecMenu::parseTableColumns(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -715,7 +715,7 @@ void GUIFormSpecMenu::parseTableColumns(parserData* data,std::string element)
 	}
 }
 
-void GUIFormSpecMenu::parseTable(parserData* data,std::string element)
+void GUIFormSpecMenu::parseTable(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -783,7 +783,7 @@ void GUIFormSpecMenu::parseTable(parserData* data,std::string element)
 	errorstream<< "Invalid table element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseTextList(parserData* data,std::string element)
+void GUIFormSpecMenu::parseTextList(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -856,7 +856,7 @@ void GUIFormSpecMenu::parseTextList(parserData* data,std::string element)
 }
 
 
-void GUIFormSpecMenu::parseDropDown(parserData* data,std::string element)
+void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -920,8 +920,7 @@ void GUIFormSpecMenu::parseDropDown(parserData* data,std::string element)
 				<< element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseFieldCloseOnEnter(parserData *data,
-		const std::string &element)
+void GUIFormSpecMenu::parseFieldCloseOnEnter(parserData *data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 	if (parts.size() == 2 ||
@@ -930,7 +929,7 @@ void GUIFormSpecMenu::parseFieldCloseOnEnter(parserData *data,
 	}
 }
 
-void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
+void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1091,8 +1090,8 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 	m_fields.push_back(spec);
 }
 
-void GUIFormSpecMenu::parseTextArea(parserData* data,
-		std::vector<std::string>& parts,std::string type)
+void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& parts,
+		const std::string &type)
 {
 
 	std::vector<std::string> v_pos = split(parts[0],',');
@@ -1203,8 +1202,8 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 	m_fields.push_back(spec);
 }
 
-void GUIFormSpecMenu::parseField(parserData* data,std::string element,
-		std::string type)
+void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
+		const std::string &type)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1222,7 +1221,7 @@ void GUIFormSpecMenu::parseField(parserData* data,std::string element,
 	errorstream<< "Invalid field element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseLabel(parserData* data,std::string element)
+void GUIFormSpecMenu::parseLabel(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1278,7 +1277,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data,std::string element)
 	errorstream<< "Invalid label element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseVertLabel(parserData* data,std::string element)
+void GUIFormSpecMenu::parseVertLabel(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1328,8 +1327,8 @@ void GUIFormSpecMenu::parseVertLabel(parserData* data,std::string element)
 	errorstream<< "Invalid vertlabel element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
-		std::string type)
+void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &element,
+		const std::string &type)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1417,7 +1416,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
 	errorstream<< "Invalid imagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseTabHeader(parserData* data,std::string element)
+void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1489,7 +1488,7 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data,std::string element)
 			<< element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
+void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &element)
 {
 
 	if (m_client == 0) {
@@ -1563,7 +1562,7 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
 	errorstream<< "Invalid ItemImagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseBox(parserData* data,std::string element)
+void GUIFormSpecMenu::parseBox(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1599,7 +1598,7 @@ void GUIFormSpecMenu::parseBox(parserData* data,std::string element)
 	errorstream<< "Invalid Box element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseBackgroundColor(parserData* data,std::string element)
+void GUIFormSpecMenu::parseBackgroundColor(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1617,7 +1616,7 @@ void GUIFormSpecMenu::parseBackgroundColor(parserData* data,std::string element)
 	errorstream<< "Invalid bgcolor element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseListColors(parserData* data,std::string element)
+void GUIFormSpecMenu::parseListColors(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
@@ -1645,7 +1644,7 @@ void GUIFormSpecMenu::parseListColors(parserData* data,std::string element)
 	errorstream<< "Invalid listcolors element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseTooltip(parserData* data, std::string element)
+void GUIFormSpecMenu::parseTooltip(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 	if (parts.size() == 2) {
@@ -1665,7 +1664,7 @@ void GUIFormSpecMenu::parseTooltip(parserData* data, std::string element)
 	errorstream<< "Invalid tooltip element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-bool GUIFormSpecMenu::parseVersionDirect(std::string data)
+bool GUIFormSpecMenu::parseVersionDirect(const std::string &data)
 {
 	//some prechecks
 	if (data == "")
@@ -1689,7 +1688,7 @@ bool GUIFormSpecMenu::parseVersionDirect(std::string data)
 	return false;
 }
 
-bool GUIFormSpecMenu::parseSizeDirect(parserData* data, std::string element)
+bool GUIFormSpecMenu::parseSizeDirect(parserData* data, const std::string &element)
 {
 	if (element == "")
 		return false;
@@ -1778,7 +1777,8 @@ void GUIFormSpecMenu::parseAnchor(parserData *data, const std::string &element)
 		return;
 	}
 
-	errorstream << "Invalid anchor element (" << parts.size() << "): '" << element << "'" << std::endl;
+	errorstream << "Invalid anchor element (" << parts.size() << "): '" << element
+			<< "'" << std::endl;
 }
 
 void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
@@ -1813,7 +1813,7 @@ void GUIFormSpecMenu::parseBrowser(parserData* data,std::string element)
 	errorstream<< "Invalid browser element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
+void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 {
 	//some prechecks
 	if (element == "")
@@ -2708,9 +2708,9 @@ void GUIFormSpecMenu::drawMenu()
 			m_old_tooltip = L"";
 		} else {
 			if (id == m_old_tooltip_id) {
-				delta = porting::getDeltaMs(m_hovered_time, getTimeMs());
+				delta = porting::getDeltaMs(m_hovered_time, porting::getTimeMs());
 			} else {
-				m_hovered_time = getTimeMs();
+				m_hovered_time = porting::getTimeMs();
 				m_old_tooltip_id = id;
 			}
 		}
@@ -3341,10 +3341,10 @@ bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 		m_doubleclickdetect[0].time = m_doubleclickdetect[1].time;
 
 		m_doubleclickdetect[1].pos  = m_pointer;
-		m_doubleclickdetect[1].time = getTimeMs();
+		m_doubleclickdetect[1].time = porting::getTimeMs();
 	}
 	else if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
-		u32 delta = porting::getDeltaMs(m_doubleclickdetect[0].time, getTimeMs());
+		u32 delta = porting::getDeltaMs(m_doubleclickdetect[0].time, porting::getTimeMs());
 		if (delta > 400) {
 			return false;
 		}
@@ -3393,8 +3393,9 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 {
 	if (event.EventType==EET_KEY_INPUT_EVENT) {
 		KeyPress kp(event.KeyInput);
-		if (event.KeyInput.PressedDown && ( (kp == EscapeKey) ||
-				(kp == getKeySetting("keymap_inventory")) || (kp == CancelKey))) {
+		if (event.KeyInput.PressedDown && (
+				(kp == EscapeKey) || (kp == CancelKey) ||
+				((m_client != NULL) && (kp == getKeySetting("keymap_inventory"))))) {
 			tryClose();
 			return true;
 		} else if (m_client != NULL && event.KeyInput.PressedDown &&

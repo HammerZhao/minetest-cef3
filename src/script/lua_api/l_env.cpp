@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_vmanip.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
-#include "serverscripting.h"
+#include "scripting_server.h"
 #include "environment.h"
 #include "server.h"
 #include "nodedef.h"
@@ -534,7 +534,7 @@ int ModApiEnvMod::l_get_objects_inside_radius(lua_State *L)
 	ScriptApiBase *script = getScriptApiBase(L);
 	lua_createtable(L, ids.size(), 0);
 	std::vector<u16>::const_iterator iter = ids.begin();
-	for(u32 i = 0; iter != ids.end(); iter++) {
+	for(u32 i = 0; iter != ids.end(); ++iter) {
 		ServerActiveObject *obj = env->getActiveObject(*iter);
 		// Insert object reference into table
 		script->objectrefGetOrCreate(L, obj);
@@ -847,6 +847,36 @@ int ModApiEnvMod::l_line_of_sight(lua_State *L)
 	return 1;
 }
 
+// fix_light(p1, p2)
+int ModApiEnvMod::l_fix_light(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos1 = getContainerPos(read_v3s16(L, 1), MAP_BLOCKSIZE);
+	v3s16 blockpos2 = getContainerPos(read_v3s16(L, 2), MAP_BLOCKSIZE);
+	ServerMap &map = env->getServerMap();
+	std::map<v3s16, MapBlock *> modified_blocks;
+	bool success = true;
+	v3s16 blockpos;
+	for (blockpos.X = blockpos1.X; blockpos.X <= blockpos2.X; blockpos.X++)
+	for (blockpos.Y = blockpos1.Y; blockpos.Y <= blockpos2.Y; blockpos.Y++)
+	for (blockpos.Z = blockpos1.Z; blockpos.Z <= blockpos2.Z; blockpos.Z++) {
+		success = success & map.repairBlockLight(blockpos, &modified_blocks);
+	}
+	if (modified_blocks.size() > 0) {
+		MapEditEvent event;
+		event.type = MEET_OTHER;
+		for (std::map<v3s16, MapBlock *>::iterator it = modified_blocks.begin();
+				it != modified_blocks.end(); ++it)
+			event.modified_blocks.insert(it->first);
+
+		map.dispatchEvent(&event);
+	}
+	lua_pushboolean(L, success);
+
+	return 1;
+}
+
 // emerge_area(p1, p2, [callback, context])
 // emerge mapblocks in area p1..p2, calls callback with context upon completion
 int ModApiEnvMod::l_emerge_area(lua_State *L)
@@ -955,8 +985,7 @@ int ModApiEnvMod::l_find_path(lua_State *L)
 		lua_newtable(L);
 		int top = lua_gettop(L);
 		unsigned int index = 1;
-		for (std::vector<v3s16>::iterator i = path.begin(); i != path.end();i++)
-		{
+		for (std::vector<v3s16>::iterator i = path.begin(); i != path.end(); ++i) {
 			lua_pushnumber(L,index);
 			push_v3s16(L, *i);
 			lua_settable(L, top);
@@ -1089,6 +1118,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(find_node_near);
 	API_FCT(find_nodes_in_area);
 	API_FCT(find_nodes_in_area_under_air);
+	API_FCT(fix_light);
 	API_FCT(emerge_area);
 	API_FCT(delete_area);
 	API_FCT(get_perlin);

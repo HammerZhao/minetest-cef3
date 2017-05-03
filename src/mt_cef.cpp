@@ -306,6 +306,35 @@ void WebPage::Close()
 	}
 }
 
+/*
+  VKEY_BROWSER_BACK = 0xA6,
+  VKEY_BROWSER_FORWARD = 0xA7,
+*/
+
+void WebPage::Back()
+{
+    CefKeyEvent e;
+
+	e.windows_key_code = 0xA6;
+	// e.native_key_code = keycode;
+	e.type = KEYEVENT_RAWKEYDOWN;
+	m_cefbrowser->GetHost()->SendKeyEvent(e);
+	e.type = KEYEVENT_KEYUP;
+	m_cefbrowser->GetHost()->SendKeyEvent(e);
+}
+
+void WebPage::Forward()
+{
+    CefKeyEvent e;
+
+	e.windows_key_code = 0xA7;
+	// e.native_key_code = keycode;
+	e.type = KEYEVENT_RAWKEYDOWN;
+	m_cefbrowser->GetHost()->SendKeyEvent(e);
+	e.type = KEYEVENT_KEYUP;
+	m_cefbrowser->GetHost()->SendKeyEvent(e);
+}
+
 void WebPage::SetSize(int width, int height)
 {
 	m_width = width;

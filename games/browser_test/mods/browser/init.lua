@@ -13,7 +13,7 @@ minetest.register_node("browser:browser1x1", {
 --		"^[browser:1024x1024,ingamebrowser1,https://www.google.com/ncr"
 --		"^[browser:320x320,ingamebrowser1_1,https://www.youtube.com/embed/vbU2VXGjQj8?autoplay=1&loop=1"
 --        "^[browser:320x320,ingamebrowser1_1,https://www.youtube.com/tv#/watch?v=dQw4w9WgXcQ"
---        "^[browser:400x400,ingamebrowser1_1,https://www.minetest.net/"
+        "^[browser:400x400,ingamebrowser1_1,https://www.minetest.net/"
 	},
 	on_punch = function(pos, node, player)
 --		local fspec = "size[14,10] browser[1,1;12,8;https://www.youtube.com/embed/C-idtmkukBk?autoplay=1]"

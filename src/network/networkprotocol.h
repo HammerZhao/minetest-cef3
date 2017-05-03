@@ -50,6 +50,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		ContentFeatures and NodeDefManager use a different serialization
 		    format; better for future version cross-compatibility
 		Many things
+		Obsolete TOCLIENT_PLAYERITEM
 	PROTOCOL_VERSION 10:
 		TOCLIENT_PRIVILEGES
 		Version raised to force 'fly' and 'fast' privileges into effect.
@@ -104,7 +105,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	PROTOCOL_VERSION 22:
 		add swap_node
 	PROTOCOL_VERSION 23:
-		TOSERVER_CLIENT_READY
+		Obsolete TOSERVER_RECEIVED_MEDIA
+		Server: Stop using TOSERVER_CLIENT_READY
 	PROTOCOL_VERSION 24:
 		ContentFeatures version 7
 		ContentFeatures: change number of special tiles to 6 (CF_SPECIAL_COUNT)
@@ -148,9 +150,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		Add node and tile color and palette
 		Fix plantlike visual_scale being applied squared and add compatibility
 			with pre-30 clients by sending sqrt(visual_scale)
+	PROTOCOL VERSION 31:
+		Add tile overlay
+		Stop sending TOSERVER_CLIENT_READY
 */
 
-#define LATEST_PROTOCOL_VERSION 30
+#define LATEST_PROTOCOL_VERSION 31
 
 // Server's supported network protocol range
 #define SERVER_PROTOCOL_VERSION_MIN 24
@@ -603,6 +608,16 @@ enum ToClientCommand
 	TOCLIENT_DELETE_PARTICLESPAWNER = 0x53,
 	/*
 		u32 id
+	*/
+
+	TOCLIENT_CLOUD_PARAMS = 0x54,
+	/*
+		f1000 density
+		u8[4] color_diffuse (ARGB)
+		u8[4] color_ambient (ARGB)
+		f1000 height
+		f1000 thickness
+		v2f1000 speed
 	*/
 
 	TOCLIENT_SRP_BYTES_S_B = 0x60,

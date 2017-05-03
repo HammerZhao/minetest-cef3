@@ -174,7 +174,6 @@ public:
 	void handleCommand_Init_Legacy(NetworkPacket* pkt);
 	void handleCommand_Init2(NetworkPacket* pkt);
 	void handleCommand_RequestMedia(NetworkPacket* pkt);
-	void handleCommand_ReceivedMedia(NetworkPacket* pkt);
 	void handleCommand_ClientReady(NetworkPacket* pkt);
 	void handleCommand_GotBlocks(NetworkPacket* pkt);
 	void handleCommand_PlayerPos(NetworkPacket* pkt);
@@ -226,12 +225,7 @@ public:
 	inline bool getShutdownRequested() const { return m_shutdown_requested; }
 
 	// request server to shutdown
-	void requestShutdown(const std::string &msg, bool reconnect)
-	{
-		m_shutdown_requested = true;
-		m_shutdown_msg = msg;
-		m_shutdown_ask_reconnect = reconnect;
-	}
+	void requestShutdown(const std::string &msg, bool reconnect, float delay = 0.0f);
 
 	// Returns -1 if failed, sound handle on success
 	// Envlock
@@ -312,6 +306,7 @@ public:
 	bool showFormspec(const char *name, const std::string &formspec, const std::string &formname);
 	Map & getMap() { return m_env->getMap(); }
 	ServerEnvironment & getEnv() { return *m_env; }
+	v3f findSpawnPos();
 
 	u32 hudAdd(RemotePlayer *player, HudElement *element);
 	bool hudRemove(RemotePlayer *player, u32 id);
@@ -337,6 +332,12 @@ public:
 
 	bool setSky(RemotePlayer *player, const video::SColor &bgcolor,
 			const std::string &type, const std::vector<std::string> &params);
+	bool setClouds(RemotePlayer *player, float density,
+			const video::SColor &color_bright,
+			const video::SColor &color_ambient,
+			float height,
+			float thickness,
+			const v2f &speed);
 
 	bool overrideDayNightRatio(RemotePlayer *player, bool do_override, float brightness);
 
@@ -406,6 +407,12 @@ private:
 	void SendHUDSetParam(u16 peer_id, u16 param, const std::string &value);
 	void SendSetSky(u16 peer_id, const video::SColor &bgcolor,
 			const std::string &type, const std::vector<std::string> &params);
+	void SendCloudParams(u16 peer_id, float density,
+			const video::SColor &color_bright,
+			const video::SColor &color_ambient,
+			float height,
+			float thickness,
+			const v2f &speed);
 	void SendOverrideDayNightRatio(u16 peer_id, bool do_override, float ratio);
 
 	/*
@@ -477,8 +484,6 @@ private:
 		bool check_shout_priv = false,
 		RemotePlayer *player = NULL);
 	void handleAdminChat(const ChatEventChat *evt);
-
-	v3f findSpawnPos();
 
 	// When called, connection mutex should be locked
 	RemoteClient* getClient(u16 peer_id,ClientState state_min=CS_Active);
@@ -602,6 +607,7 @@ private:
 	bool m_shutdown_requested;
 	std::string m_shutdown_msg;
 	bool m_shutdown_ask_reconnect;
+	float m_shutdown_timer;
 
 	ChatInterface *m_admin_chat;
 	std::string m_admin_nick;

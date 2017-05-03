@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define REMOTEPLAYER_HEADER
 
 #include "player.h"
+#include "cloudparams.h"
 
 class PlayerSAO;
 
@@ -37,11 +38,12 @@ enum RemotePlayerChatResult
 */
 class RemotePlayer : public Player
 {
+	friend class PlayerDatabaseFiles;
+
 public:
 	RemotePlayer(const char *name, IItemDefManager *idef);
 	virtual ~RemotePlayer() {}
 
-	void save(std::string savedir, IGameDef *gamedef);
 	void deSerialize(std::istream &is, const std::string &playername, PlayerSAO *sao);
 
 	PlayerSAO *getPlayerSAO() { return m_sao; }
@@ -96,6 +98,16 @@ public:
 		*bgcolor = m_sky_bgcolor;
 		*type = m_sky_type;
 		*params = m_sky_params;
+	}
+
+	void setCloudParams(const CloudParams &cloud_params)
+	{
+		m_cloud_params = cloud_params;
+	}
+
+	const CloudParams &getCloudParams() const
+	{
+		return m_cloud_params;
 	}
 
 	bool checkModified() const { return m_dirty || inventory.checkModified(); }
@@ -153,6 +165,7 @@ private:
 	std::string m_sky_type;
 	video::SColor m_sky_bgcolor;
 	std::vector<std::string> m_sky_params;
+	CloudParams m_cloud_params;
 };
 
 #endif

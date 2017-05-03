@@ -32,6 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "porting.h"
 #include "mg_schematic.h"
 #include "noise.h"
+#include "util/pointedthing.h"
 #include <json/json.h>
 
 struct EnumString es_TileAnimationType[] =
@@ -43,14 +44,11 @@ struct EnumString es_TileAnimationType[] =
 };
 
 /******************************************************************************/
-ItemDefinition read_item_definition(lua_State* L,int index,
-		ItemDefinition default_def)
+void read_item_definition(lua_State* L, int index,
+		const ItemDefinition &default_def, ItemDefinition &def)
 {
-	if(index < 0)
+	if (index < 0)
 		index = lua_gettop(L) + 1 + index;
-
-	// Read the item definition
-	ItemDefinition def = default_def;
 
 	def.type = (ItemType)getenumfield(L, index, "type",
 			es_ItemType, ITEM_NONE);
@@ -118,8 +116,16 @@ ItemDefinition read_item_definition(lua_State* L,int index,
 	// "" = no prediction
 	getstringfield(L, index, "node_placement_prediction",
 			def.node_placement_prediction);
+}
 
-	return def;
+/******************************************************************************/
+void push_item_definition(lua_State *L, const ItemDefinition &i)
+{
+	lua_newtable(L);
+	lua_pushstring(L, i.name.c_str());
+	lua_setfield(L, -2, "name");
+	lua_pushstring(L, i.description.c_str());
+	lua_setfield(L, -2, "description");
 }
 
 /******************************************************************************/
@@ -425,6 +431,34 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			TileDef lasttile = f.tiledef[i-1];
 			while(i < 6){
 				f.tiledef[i] = lasttile;
+				i++;
+			}
+		}
+	}
+	lua_pop(L, 1);
+
+	// overlay_tiles = {}
+	lua_getfield(L, index, "overlay_tiles");
+	if (lua_istable(L, -1)) {
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		int i = 0;
+		while (lua_next(L, table) != 0) {
+			// Read tiledef from value
+			f.tiledef_overlay[i] = read_tiledef(L, -1, f.drawtype);
+			// removes value, keeps key for next iteration
+			lua_pop(L, 1);
+			i++;
+			if (i == 6) {
+				lua_pop(L, 1);
+				break;
+			}
+		}
+		// Copy last value to all remaining textures
+		if (i >= 1) {
+			TileDef lasttile = f.tiledef_overlay[i - 1];
+			while (i < 6) {
+				f.tiledef_overlay[i] = lasttile;
 				i++;
 			}
 		}
@@ -873,7 +907,7 @@ void push_tool_capabilities(lua_State *L,
 		lua_newtable(L);
 		// For each groupcap
 		for (ToolGCMap::const_iterator i = toolcap.groupcaps.begin();
-			i != toolcap.groupcaps.end(); i++) {
+			i != toolcap.groupcaps.end(); ++i) {
 			// Create groupcap table
 			lua_newtable(L);
 			const std::string &name = i->first;
@@ -881,7 +915,7 @@ void push_tool_capabilities(lua_State *L,
 			// Create subtable "times"
 			lua_newtable(L);
 			for (UNORDERED_MAP<int, float>::const_iterator
-					i = groupcap.times.begin(); i != groupcap.times.end(); i++) {
+					i = groupcap.times.begin(); i != groupcap.times.end(); ++i) {
 				lua_pushinteger(L, i->first);
 				lua_pushnumber(L, i->second);
 				lua_settable(L, -3);
@@ -900,7 +934,7 @@ void push_tool_capabilities(lua_State *L,
 		lua_newtable(L);
 		// For each damage group
 		for (DamageGroup::const_iterator i = toolcap.damageGroups.begin();
-			i != toolcap.damageGroups.end(); i++) {
+			i != toolcap.damageGroups.end(); ++i) {
 			// Create damage group table
 			lua_pushinteger(L, i->second);
 			lua_setfield(L, -2, i->first.c_str());
@@ -939,7 +973,7 @@ void read_inventory_list(lua_State *L, int tableindex,
 	InventoryList *invlist = inv->addList(name, listsize);
 	int index = 0;
 	for(std::vector<ItemStack>::const_iterator
-			i = items.begin(); i != items.end(); i++){
+			i = items.begin(); i != items.end(); ++i){
 		if(forcesize != -1 && index == forcesize)
 			break;
 		invlist->changeItem(index, *i);
@@ -1403,4 +1437,37 @@ void read_json_value(lua_State *L, Json::Value &root, int index, u8 recursion)
 		throw SerializationError("Can only store booleans, numbers, strings, objects, arrays, and null in JSON");
 	}
 	lua_pop(L, 1); // Pop value
+}
+
+void push_pointed_thing(lua_State *L, const PointedThing &pointed)
+{
+	lua_newtable(L);
+	if (pointed.type == POINTEDTHING_NODE) {
+		lua_pushstring(L, "node");
+		lua_setfield(L, -2, "type");
+		push_v3s16(L, pointed.node_undersurface);
+		lua_setfield(L, -2, "under");
+		push_v3s16(L, pointed.node_abovesurface);
+		lua_setfield(L, -2, "above");
+	} else if (pointed.type == POINTEDTHING_OBJECT) {
+		lua_pushstring(L, "object");
+		lua_setfield(L, -2, "type");
+		push_objectRef(L, pointed.object_id);
+		lua_setfield(L, -2, "ref");
+	} else {
+		lua_pushstring(L, "nothing");
+		lua_setfield(L, -2, "type");
+	}
+}
+
+void push_objectRef(lua_State *L, const u16 id)
+{
+	// Get core.object_refs[i]
+	lua_getglobal(L, "core");
+	lua_getfield(L, -1, "object_refs");
+	luaL_checktype(L, -1, LUA_TTABLE);
+	lua_pushnumber(L, id);
+	lua_gettable(L, -2);
+	lua_remove(L, -2); // object_refs
+	lua_remove(L, -2); // core
 }

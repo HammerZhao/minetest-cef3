@@ -492,10 +492,7 @@ cloud_height (Cloud height) int 120
 #    Values larger than 26 will start to produce sharp cutoffs at cloud area corners.
 cloud_radius (Cloud radius) int 12
 
-#    Enables view bobbing when walking.
-view_bobbing (Enable view bobbing) bool true
-
-#    Multiplier for view bobbing.
+#    Enable view bobbing and amount of view bobbing.
 #    For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double.
 view_bobbing_amount (View bobbing factor) float 1.0
 
@@ -550,6 +547,11 @@ enable_mesh_cache (Mesh cache) bool false
 #    Delay between mesh updates on the client in ms. Increasing this will slow
 #    down the rate of mesh updates, thus reducing jitter on slower clients.
 mesh_generation_interval (Mapblock mesh generation delay) int 0 0 50
+
+#    Size of the MapBlock cache of the mesh generator. Increasing this will
+#    increase the cache hit %, reducing the data being copied from the main
+#    thread, thus reducing jitter.
+meshgen_block_cache_size (Mapblock mesh generator's MapBlock cache size MB) int 20 0 1000
 
 #    Enables minimap.
 enable_minimap (Minimap) bool true

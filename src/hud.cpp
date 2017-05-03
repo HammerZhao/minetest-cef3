@@ -619,7 +619,7 @@ void Hud::resizeHotbar() {
 }
 
 struct MeshTimeInfo {
-	s32 time;
+	s64 time;
 	scene::IMesh *mesh;
 };
 
@@ -653,9 +653,9 @@ void drawItemStack(video::IVideoDriver *driver,
 			MeshTimeInfo &ti = rotation_time_infos[rotation_kind];
 			if (mesh != ti.mesh) {
 				ti.mesh = mesh;
-				ti.time = getTimeMs();
+				ti.time = porting::getTimeMs();
 			} else {
-				delta = porting::getDeltaMs(ti.time, getTimeMs()) % 100000;
+				delta = porting::getDeltaMs(ti.time, porting::getTimeMs()) % 100000;
 			}
 		}
 		core::rect<s32> oldViewPort = driver->getViewPort();
@@ -687,8 +687,9 @@ void drawItemStack(video::IVideoDriver *driver,
 			assert(buf->getHardwareMappingHint_Vertex() == scene::EHM_NEVER);
 			video::SColor c = basecolor;
 			if (imesh->buffer_colors.size() > j) {
-				std::pair<bool, video::SColor> p = imesh->buffer_colors[j];
-				c = p.first ? p.second : basecolor;
+				ItemPartColor *p = &imesh->buffer_colors[j];
+				if (p->override_base)
+					c = p->color;
 			}
 			colorizeMeshBuffer(buf, &c);
 			video::SMaterial &material = buf->getMaterial();

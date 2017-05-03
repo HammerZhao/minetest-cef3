@@ -379,13 +379,13 @@ void ContentFeatures::reset()
 
 void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 {
-	if (protocol_version < 30) {
+	if (protocol_version < 31) {
 		serializeOld(os, protocol_version);
 		return;
 	}
 
 	// version
-	writeU8(os, 9);
+	writeU8(os, 10);
 
 	// general
 	os << serializeString(name);
@@ -405,6 +405,8 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	writeU8(os, 6);
 	for (u32 i = 0; i < 6; i++)
 		tiledef[i].serialize(os, protocol_version);
+	for (u32 i = 0; i < 6; i++)
+		tiledef_overlay[i].serialize(os, protocol_version);
 	writeU8(os, CF_SPECIAL_COUNT);
 	for (u32 i = 0; i < CF_SPECIAL_COUNT; i++) {
 		tiledef_special[i].serialize(os, protocol_version);
@@ -493,7 +495,7 @@ void ContentFeatures::deSerialize(std::istream &is)
 	if (version < 9) {
 		deSerializeOld(is, version);
 		return;
-	} else if (version > 9) {
+	} else if (version > 10) {
 		throw SerializationError("unsupported ContentFeatures version");
 	}
 
@@ -517,6 +519,9 @@ void ContentFeatures::deSerialize(std::istream &is)
 		throw SerializationError("unsupported tile count");
 	for (u32 i = 0; i < 6; i++)
 		tiledef[i].deSerialize(is, version, drawtype);
+	if (version >= 10)
+		for (u32 i = 0; i < 6; i++)
+			tiledef_overlay[i].deSerialize(is, version, drawtype);
 	if (readU8(is) != CF_SPECIAL_COUNT)
 		throw SerializationError("unsupported CF_SPECIAL_COUNT");
 	for (u32 i = 0; i < CF_SPECIAL_COUNT; i++)
@@ -582,7 +587,7 @@ void ContentFeatures::deSerialize(std::istream &is)
 }
 
 #ifndef SERVER
-void ContentFeatures::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
+void ContentFeatures::fillTileAttribs(ITextureSource *tsrc, TileLayer *tile,
 		TileDef *tiledef, u32 shader_id, bool use_normal_texture,
 		bool backface_culling, u8 material_type)
 {
@@ -729,25 +734,29 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 			for (u32 i = 0; i < 6; i++)
 				tdef[i].name += std::string("^[noalpha");
 		}
-		if (waving == 1)
+		if (waving >= 1)
 			material_type = TILE_MATERIAL_WAVING_LEAVES;
 		break;
 	case NDT_PLANTLIKE:
 		solidness = 0;
-		if (waving == 1)
+		if (waving >= 1)
 			material_type = TILE_MATERIAL_WAVING_PLANTS;
 		break;
 	case NDT_FIRELIKE:
 		solidness = 0;
 		break;
 	case NDT_MESH:
+	case NDT_NODEBOX:
 		solidness = 0;
+		if (waving == 1)
+			material_type = TILE_MATERIAL_WAVING_PLANTS;
+		else if (waving == 2)
+			material_type = TILE_MATERIAL_WAVING_LEAVES;
 		break;
 	case NDT_TORCHLIKE:
 	case NDT_SIGNLIKE:
 	case NDT_FENCELIKE:
 	case NDT_RAILLIKE:
-	case NDT_NODEBOX:
 		solidness = 0;
 		break;
 	case NDT_INTERACTIVE:
@@ -779,19 +788,26 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 
 	// Tiles (fill in f->tiles[])
 	for (u16 j = 0; j < 6; j++) {
-		fillTileAttribs(tsrc, &tiles[j], &tdef[j], tile_shader[j],
+		fillTileAttribs(tsrc, &tiles[j].layers[0], &tdef[j], tile_shader[j],
 			tsettings.use_normal_texture,
 			tiledef[j].backface_culling, material_type);
+		if (tiledef_overlay[j].name!="")
+			fillTileAttribs(tsrc, &tiles[j].layers[1], &tiledef_overlay[j],
+				tile_shader[j], tsettings.use_normal_texture,
+				tiledef[j].backface_culling, material_type);
 	}
 
 	// Special tiles (fill in f->special_tiles[])
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
-		fillTileAttribs(tsrc, &special_tiles[j], &tiledef_special[j],
+		fillTileAttribs(tsrc, &special_tiles[j].layers[0], &tiledef_special[j],
 			tile_shader[j], tsettings.use_normal_texture,
 			tiledef_special[j].backface_culling, material_type);
 	}
 
-	palette = tsrc->getPalette(palette_name);
+	if (param_type_2 == CPT2_COLOR ||
+			param_type_2 == CPT2_COLORED_FACEDIR ||
+			param_type_2 == CPT2_COLORED_WALLMOUNTED)
+		palette = tsrc->getPalette(palette_name);
 
 	if ((drawtype == NDT_MESH) && (mesh != "")) {
 		// Meshnode drawtype
@@ -1311,22 +1327,21 @@ void CNodeDefManager::removeNode(const std::string &name)
 
 	// Erase node content from all groups it belongs to
 	for (UNORDERED_MAP<std::string, GroupItems>::iterator iter_groups =
-			m_group_to_items.begin();
-			iter_groups != m_group_to_items.end();) {
+			m_group_to_items.begin(); iter_groups != m_group_to_items.end();) {
 		GroupItems &items = iter_groups->second;
 		for (GroupItems::iterator iter_groupitems = items.begin();
 				iter_groupitems != items.end();) {
 			if (iter_groupitems->first == id)
 				items.erase(iter_groupitems++);
 			else
-				iter_groupitems++;
+				++iter_groupitems;
 		}
 
 		// Check if group is empty
 		if (items.size() == 0)
 			m_group_to_items.erase(iter_groups++);
 		else
-			iter_groups++;
+			++iter_groups;
 	}
 }
 
@@ -1540,8 +1555,19 @@ void ContentFeatures::serializeOld(std::ostream &os, u16 protocol_version) const
 	if (protocol_version < 30 && drawtype == NDT_PLANTLIKE)
 		compatible_visual_scale = sqrt(visual_scale);
 
+	TileDef compatible_tiles[6];
+	for (u8 i = 0; i < 6; i++) {
+		compatible_tiles[i] = tiledef[i];
+		if (tiledef_overlay[i].name != "") {
+			std::stringstream s;
+			s << "(" << tiledef[i].name << ")^(" << tiledef_overlay[i].name
+				<< ")";
+			compatible_tiles[i].name = s.str();
+		}
+	}
+
 	// Protocol >= 24
-	if (protocol_version < 30) {
+	if (protocol_version < 31) {
 		writeU8(os, protocol_version < 27 ? 7 : 8);
 
 		os << serializeString(name);
@@ -1555,7 +1581,7 @@ void ContentFeatures::serializeOld(std::ostream &os, u16 protocol_version) const
 		writeF1000(os, compatible_visual_scale);
 		writeU8(os, 6);
 		for (u32 i = 0; i < 6; i++)
-			tiledef[i].serialize(os, protocol_version);
+			compatible_tiles[i].serialize(os, protocol_version);
 		writeU8(os, CF_SPECIAL_COUNT);
 		for (u32 i = 0; i < CF_SPECIAL_COUNT; i++)
 			tiledef_special[i].serialize(os, protocol_version);

@@ -17,6 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef MINETEST_MT_CEF_H
+#define MINETEST_MT_CEF_H
+
 #include <unordered_map>
 
 #include "include/cef_app.h"
@@ -91,6 +94,8 @@ public:
 	~WebPage();
 	void Open(std::string url);
 	void Close();
+	void Back();
+	void Forward();
 	void SetSize(int width, int height);
 
 	void OnMouseMoved(s32 x, s32 y);
@@ -138,3 +143,5 @@ public:
     void CloseWebPage(std::string name);
 	void CloseWebPages();
 };
+
+#endif // MINETEST_MT_CEF_H
