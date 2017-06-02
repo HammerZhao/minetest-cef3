@@ -43,7 +43,6 @@ int skippy = 0;
 // static
 MinetestBrowser* MinetestBrowser::GetInstance()
 {
-	CHECK(m_browser);
 	return m_browser;
 }
 
@@ -56,7 +55,6 @@ bool MinetestBrowser::IsInitialized()
 // static
 void MinetestBrowser::Initialize()
 {
-	CHECK(!m_browser);
 	skippy = 0;
 	m_browser = new MinetestBrowser();
 
@@ -96,10 +94,15 @@ void MinetestBrowser::Shutdown()
 // static
 void MinetestBrowser::Update()
 {
-	CHECK(m_browser);
     if (skippy >= 1)
     {
     	if (GetInstance()->m_webPages.begin() != GetInstance()->m_webPages.end()) {
+			for (auto iter = GetInstance()->m_webPages.begin(); iter != GetInstance()->m_webPages.end(); ++iter){
+				auto cur = iter->first; // pointer to Node
+				if (GetInstance()->m_webPages[cur] != NULL) {
+					GetInstance()->m_webPages[cur]->ProcessEvents();
+				}
+			}
 			CefDoMessageLoopWork();
     	}
 		skippy = 0;
@@ -111,7 +114,6 @@ void MinetestBrowser::Update()
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	video::ITexture *texture, v2s32 geom)
 {
-	CHECK(m_browser);
 
 	WebPage* webPage = new WebPage(name, driver, texture, geom.X, geom.Y);
 	m_webPages[name] = webPage;
@@ -122,8 +124,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	video::ITexture *texture, v2s32 geom, std::string url)
 {
-	CHECK(m_browser);
-
 	WebPage* webPage = CreateWebPage(name, driver, texture, geom);
 	webPage->Open(url);
 
@@ -133,8 +133,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	video::ITexture *texture, core::dimension2d<u32> dimension)
 {
-	CHECK(m_browser);
-
 	WebPage* webPage = new WebPage(name, driver, texture, dimension.Width, dimension.Height);
 	m_webPages[name] = webPage;
 
@@ -144,8 +142,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	video::ITexture *texture, core::dimension2d<u32> dimension, std::string url)
 {
-	CHECK(m_browser);
-
 	WebPage* webPage = CreateWebPage(name, driver, texture, dimension);
 	webPage->Open(url);
 
@@ -156,8 +152,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	video::IImage *image, core::dimension2d<u32> dimension)
 {
-	CHECK(m_browser);
-
 	WebPage* webPage = new WebPage(name, driver, image,
         dimension.Width, dimension.Height);
 	m_webPages[name] = webPage;
@@ -168,8 +162,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	video::IImage *image, core::dimension2d<u32> dimension, std::string url)
 {
-	CHECK(m_browser);
-
 	WebPage* webPage = CreateWebPage(name, driver, image, dimension);
 	webPage->Open(url);
 
@@ -180,8 +172,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	irr::gui::IGUIEnvironment* guiEnv, v2s32 pos, v2s32 geom)
 {
-	CHECK(m_browser);
-
 	video::ITexture *texture =
 		driver->addTexture(core::dimension2d<u32>(geom.X, geom.Y),
 		   io::path("browsertexture"),
@@ -200,8 +190,6 @@ WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *d
 WebPage* MinetestBrowser::CreateWebPage(std::string name, video::IVideoDriver *driver,
 	irr::gui::IGUIEnvironment* guiEnv, v2s32 pos, v2s32 geom, std::string url)
 {
-	CHECK(m_browser);
-
 	WebPage* webPage = CreateWebPage(name, driver, guiEnv, pos, geom);
 	webPage->Open(url);
 
@@ -214,8 +202,6 @@ WebPage* MinetestBrowser::GetWebPage(std::string name) {
 
 void MinetestBrowser::CloseWebPage(std::string name)
 {
-	CHECK(m_browser);
-
 	auto iter = m_webPages.find(name);
 	if (iter != m_webPages.end()) {
 		WebPage* webPage = iter->second;
@@ -229,9 +215,11 @@ void MinetestBrowser::CloseWebPage(std::string name)
 }
 
 void MinetestBrowser::CloseWebPages() {
-	for(auto iter = m_webPages.begin(); iter != m_webPages.end(); ++iter){
+	for (auto iter = m_webPages.begin(); iter != m_webPages.end(); ++iter){
 		auto cur = iter->first; // pointer to Node
-		m_webPages[cur]->Close();
+		if (m_webPages[cur] != NULL) {
+			m_webPages[cur]->Close();
+		}
 	}
 }
 
@@ -246,8 +234,6 @@ WebPage::WebPage(std::string name, video::IVideoDriver *driver,
 	, m_guiImage(guiImage)
 	, m_texture(texture)
 {
-	CHECK(guiImage);
-	CHECK(texture);
 	MinetestCefRenderHandler* rh = new MinetestCefRenderHandler(m_driver, m_texture,
         width, height);
 	m_client = new MinetestCefClient(rh);
@@ -261,7 +247,6 @@ WebPage::WebPage(std::string name, video::IVideoDriver *driver,
 	, m_driver(driver)
 	, m_image(image)
 {
-	CHECK(image);
 	MinetestCefRenderHandler* rh = new MinetestCefRenderHandler(m_driver, m_image,
         width, height);
 	m_client = new MinetestCefClient(rh);
@@ -275,7 +260,6 @@ WebPage::WebPage(std::string name, video::IVideoDriver *driver,
 	, m_driver(driver)
 	, m_texture(texture)
 {
-	CHECK(texture);
 	MinetestCefRenderHandler* rh = new MinetestCefRenderHandler(m_driver, m_texture,
         width, height);
 	m_client = new MinetestCefClient(rh);
@@ -284,6 +268,78 @@ WebPage::WebPage(std::string name, video::IVideoDriver *driver,
 WebPage::~WebPage()
 {
 	;
+}
+
+void WebPage::PostEvent(WebPageEvent event)
+{
+	m_mutex.lock();
+	m_events.push(event);
+	m_mutex.unlock();
+}
+
+void WebPage::ProcessEvents()
+{
+	m_mutex.lock();
+	if (!m_events.empty()) {
+		WebPageEvent wpevent = m_events.front();
+		m_events.pop();
+
+		switch (wpevent.m_type) {
+			case WPET_IRRLICHT:
+				ProcessIrrlichtEvent(wpevent.m_event);
+				break;
+			case WPET_ACTION_CREATE:
+				break;
+			case WPET_ACTION_OPEN_URL:
+				Open(wpevent.m_parameter);
+				break;
+			case WPET_ACTION_BACK:
+				Back();
+				break;
+			case WPET_ACTION_FORWARD:
+				Forward();
+				break;
+			case WPET_ACTION_CLOSE:
+				break;
+			default:
+				break;
+		}
+	}
+	m_mutex.unlock();
+}
+
+void WebPage::ProcessIrrlichtEvent(irr::SEvent event)
+{
+	switch (event.EventType) {
+		case EET_MOUSE_INPUT_EVENT:
+			switch (event.MouseInput.Event) {
+				case EMIE_MOUSE_MOVED:
+					OnMouseMoved(event.MouseInput.X, event.MouseInput.Y);
+					break;
+				case EMIE_LMOUSE_PRESSED_DOWN:
+					OnLeftMousePressedDown(event.MouseInput.X, event.MouseInput.Y);
+					break;
+				case EMIE_LMOUSE_LEFT_UP:
+					OnLeftMouseLeftUp(event.MouseInput.X, event.MouseInput.Y);
+					break;
+				case EMIE_LMOUSE_DOUBLE_CLICK:
+					OnLeftMouseDoubleClick(event.MouseInput.X, event.MouseInput.Y);
+					break;
+				default:
+					// The click took place on the browser, so no need to
+					// let the system search for other potential candidates
+					// to handle the event
+					break;
+			};
+			break;
+		case EET_KEY_INPUT_EVENT:
+            if (event.KeyInput.PressedDown) {
+                OnKeyPressed(event.KeyInput);
+            }
+			break;
+		default:
+			break;
+	}
 }
 
 void WebPage::Open(std::string url)

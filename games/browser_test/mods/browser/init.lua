@@ -9,17 +9,24 @@ minetest.register_node("browser:browser1x1", {
 		"google.png",
 		"google.png",
 		"google.png",
-		"google.png",
+--		"google.png",
 --		"^[browser:1024x1024,ingamebrowser1,https://www.google.com/ncr"
 --		"^[browser:320x320,ingamebrowser1_1,https://www.youtube.com/embed/vbU2VXGjQj8?autoplay=1&loop=1"
 --        "^[browser:320x320,ingamebrowser1_1,https://www.youtube.com/tv#/watch?v=dQw4w9WgXcQ"
-        "^[browser:400x400,ingamebrowser1_1,https://www.minetest.net/"
+        "^[browser:400x400,luabrowsertest,http://www.minetest.net/"
 	},
 	on_punch = function(pos, node, player)
 --		local fspec = "size[14,10] browser[1,1;12,8;https://www.youtube.com/embed/C-idtmkukBk?autoplay=1]"
 --		local fspec = "size[14,10] browser[1,1;12,8;http://minetest.net/]"
-		local fspec = "size[14,10] browser[1,1;12,8;https://www.google.com/ncr]"
-		minetest.show_formspec(player:get_player_name(), "browser:open", fspec)
+--		local fspec = "size[14,10] browser[1,1;12,8;https://www.google.com/ncr]"
+--		minetest.show_formspec(player:get_player_name(), "browser:open", fspec)
+
+		minetest.show_formspec(
+			player:get_player_name(), "browser:url",
+			"size[11,3;]"..
+			"field[1,1;10,1;url;URL;]"
+		)
+
 	end
 
 --	on_use = function(pos, node, player)
@@ -28,6 +35,16 @@ minetest.register_node("browser:browser1x1", {
 --	end
 
 })
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+	if formname == "browser:url" then
+		print("Getting web page")
+		local web_page = core:get_web_page("luabrowsertest")
+		print("Opening URL")
+		web_page:open_url(fields.url)
+	end
+end)
+
 
 --[[minetest.register_node("browser:browser1x2", {
 	description = "Browser",

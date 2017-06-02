@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MINETEST_L_WEBPAGE_H
 
 #include "l_base.h"
+
 #include "mt_cef.h"
 
 class LuaWebPage : public ModApiBase
@@ -46,8 +47,6 @@ public:
 	static int create(lua_State *L, WebPage *m);
 
 	static LuaWebPage *checkobject(lua_State *L, int narg);
-	static WebPage *getobject(LuaWebPage *ref);
-	static WebPage *getobject(lua_State *L, int narg);
 
 	static void Register(lua_State *L);
 };
@@ -58,6 +57,7 @@ private:
 	static int l_get_web_page(lua_State *L);
 
 public:
+	static void Initialize(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);
 };
 

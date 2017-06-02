@@ -59,7 +59,10 @@ int LuaWebPage::l_open_url(lua_State *L)
 	std::string url = luaL_checkstring(L, 2);
 
 	WebPage *webPage = o->m_webPage;
-	webPage->Open(url);
+	WebPageEvent wpevent;
+	wpevent.m_type = WPET_ACTION_OPEN_URL;
+	wpevent.m_parameter = url;
+	webPage->PostEvent(wpevent);
 
 	return 1;
 }
@@ -70,9 +73,12 @@ int LuaWebPage::l_back(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 
 	LuaWebPage *o = checkobject(L, 1);
+
 	WebPage *webPage = o->m_webPage;
 
-	webPage->Back();
+	WebPageEvent wpevent;
+	wpevent.m_type = WPET_ACTION_BACK;
+	webPage->PostEvent(wpevent);
 
 	return 1;
 }
@@ -83,9 +89,12 @@ int LuaWebPage::l_forward(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 
 	LuaWebPage *o = checkobject(L, 1);
+
 	WebPage *webPage = o->m_webPage;
 
-	webPage->Forward();
+	WebPageEvent wpevent;
+	wpevent.m_type = WPET_ACTION_FORWARD;
+	webPage->PostEvent(wpevent);
 
 	return 1;
 }
@@ -158,7 +167,10 @@ const luaL_Reg LuaWebPage::methods[] = {
 	{0,0}
 };
 
-
+void ModApiWebPage::Initialize(lua_State *L, int top)
+{
+	API_FCT(get_web_page);
+}
 
 void ModApiWebPage::InitializeClient(lua_State *L, int top)
 {

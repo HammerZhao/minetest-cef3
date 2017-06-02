@@ -177,4 +177,3 @@ end
 function core.cancel_shutdown_requests()
 	core.request_shutdown("", false, -1)
 end
-

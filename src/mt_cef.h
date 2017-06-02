@@ -21,6 +21,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MINETEST_MT_CEF_H
 
 #include <unordered_map>
+#include <mutex>
+#include <queue>
 
 #include "include/cef_app.h"
 #include "include/cef_client.h"
@@ -71,6 +73,21 @@ public:
     IMPLEMENT_REFCOUNTING(MinetestCefClient);
 };
 
+enum WebPageEventType {
+	WPET_IRRLICHT,
+	WPET_ACTION_CREATE,
+	WPET_ACTION_OPEN_URL,
+	WPET_ACTION_BACK,
+	WPET_ACTION_FORWARD,
+	WPET_ACTION_CLOSE,
+};
+
+struct WebPageEvent {
+	WebPageEventType m_type;
+	irr::SEvent m_event;
+	std::string m_parameter;
+};
+
 class WebPage
 {
 private:
@@ -83,6 +100,10 @@ private:
     video::ITexture *m_texture;
 	CefRefPtr<MinetestCefClient> m_client;
 	CefRefPtr<CefBrowser> m_cefbrowser;
+
+	std::mutex m_mutex;
+	std::queue<WebPageEvent> m_events;
+
 public:
 	WebPage(std::string name, video::IVideoDriver *driver,
         irr::gui::IGUIImage *image, video::ITexture *texture,
@@ -92,6 +113,11 @@ public:
 	WebPage(std::string name, video::IVideoDriver *driver,
         video::ITexture *texture, int width, int height);
 	~WebPage();
+
+	void PostEvent(WebPageEvent);
+	void ProcessEvents();
+	void ProcessIrrlichtEvent(irr::SEvent event);
+
 	void Open(std::string url);
 	void Close();
 	void Back();

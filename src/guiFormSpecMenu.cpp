@@ -3070,10 +3070,16 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
         // or not .......
         WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
         if (webPage != NULL) {
-            if (event.KeyInput.PressedDown) {
-                webPage->OnKeyPressed(event.KeyInput);
-            }
+			WebPageEvent wpevent;
+			wpevent.m_type = WPET_IRRLICHT;
+			wpevent.m_event = event;
+			webPage->PostEvent(wpevent);
             return true;
+
+//            if (event.KeyInput.PressedDown) {
+//                webPage->OnKeyPressed(event.KeyInput);
+//            }
+//            return true;
         }
 #endif // _ENABLE_CEF3
 	}
@@ -3112,7 +3118,19 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
         // "browser". This is a hack currently as I can't use numeric IDs and
         // testing of the WebPage instance named "formspec" exists is also not
         // very nice ...
+
         if (strcmp(hovered->getName(), "browser") == 0) {
+            WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
+            if (webPage == NULL) return false;
+
+        	WebPageEvent wpevent;
+			wpevent.m_type = WPET_IRRLICHT;
+			wpevent.m_event = event;
+			webPage->PostEvent(wpevent);
+			return true;
+        }
+
+/*        if (strcmp(hovered->getName(), "browser") == 0) {
             WebPage* webPage = MinetestBrowser::GetInstance()->GetWebPage("formspec");
             // TODO: If webPage is NULL, do error handling!
             switch (event.MouseInput.Event) {
@@ -3135,6 +3153,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
                     return true;
             }
         }
+*/
 #endif // _ENABLE_CEF3
 
 		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
